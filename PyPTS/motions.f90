@@ -1,0 +1,43 @@
+module motions_m
+    use iso_c_binding
+    use droplet_motion_m
+    !use virus_droplet_motion_m
+    use simulator_m, only: mv_simulator
+    implicit none
+    
+contains
+
+subroutine assign_droplet_motion(rho_f, mu_f, rho_p, dt, RK_order) bind(c, name="assign_droplet_motion")
+    real(c_double),intent(in) :: rho_f
+    real(c_double),intent(in) :: mu_f
+    real(c_double),intent(in) :: rho_p
+    real(c_double),intent(in) :: dt
+    integer(c_int),intent(in) :: RK_order
+
+    type(droplet_motion_t) motion_
+
+    call motion_%construct_droplet_motion(rho_f, mu_f, rho_p, dt, RK_order)
+
+    call mv_simulator%set_motion(motion_)
+
+
+end subroutine
+
+
+! subroutine assign_virus_droplet_motion(rho_f, mu_f, rho_p, dt, RK_order)
+!     real(8),intent(in) :: rho_f
+!     real(8),intent(in) :: mu_f
+!     real(8),intent(in) :: rho_p
+!     real(8),intent(in) :: dt
+!     integer,intent(in) :: RK_order
+
+!     type(droplet_motion_t) motion_
+
+!     call motion_%construct_droplet_motion(rho_f, mu_f, rho_p, dt, RK_order)
+
+!     call mv_simulator%set_motion(motion_)
+
+
+! end subroutine
+
+end module motions_m

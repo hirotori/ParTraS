@@ -1,0 +1,10 @@
+*.pdata
+*.vtk
+*build*
+*.dylib
+*.so
+*.a
+*.mod
+*.vscode
+*main*
+*.DS_Store
