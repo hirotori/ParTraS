@@ -2,7 +2,7 @@
 
 ![Fortran Standard](https://img.shields.io/badge/Fortran-2008%2F2018-blue)
 <img src="https://img.shields.io/badge/-Python-F9DC3E.svg?logo=python&style=flat">
-![License](https://img.shields.io/github/license/hirotori/partras)
+![License](https://img.shields.io/github/license/hirotori/ParTraS)
 
 ParTraS は、非構造格子で計算された流れ場を浮遊する微粒子や飛沫の追跡を目的とした Lagrange 粒子シミュレーションフレームワークです。
 高精度な計算と柔軟な拡張性を提供し、研究や工学分野での使用を想定しています。
@@ -43,7 +43,7 @@ ParTraS は、非構造格子で計算された流れ場を浮遊する微粒子
 ### 手順
 1. リポジトリをクローンします:
    ```bash
-   git clone https://github.com/hirotori/partras.git
+   git clone https://github.com/hirotori/ParTraS.git
    cd partras
    ```
 2. ビルドディレクトリを生成し, cmakeコマンドでプロジェクトを構成する. 
