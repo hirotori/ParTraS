@@ -36,7 +36,7 @@ motions.droplet(rho_f, mu_f, rho_p, dt, n_rk)
 update.vtkUpdater.no_update()
 
 # simulation
-simulation.initialize(100, True, "../suteru/data_", 
-                      100, False, "../suteru/data_")
+simulation.initialize(100, True, "data", 
+                      100, False, "data")
 
 simulation.run(1, 1000)
