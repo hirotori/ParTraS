@@ -58,6 +58,7 @@ module particle_data_m
            construct_particle_data, &
            delete_particle_data, &
            add_particle, &
+           get_particle_arrays, &
            export_pdata_ascii, export_pdata_binary, &
            import_pdata_ascii, import_pdata_binary, &
            write(formatted)
@@ -105,6 +106,19 @@ subroutine add_particle(particles)
     call move_alloc(from=pdata_tmp_, to=mv_pdata%particles)
     mv_pdata%N_part = mv_pdata%N_part + n_
     deallocate(particles)
+
+end subroutine
+
+subroutine get_particle_arrays(particles)
+    !! get deep copy of `particle_data_t%particles`
+    type(particle_t),allocatable :: particles(:)
+
+    if ( allocated(particles) ) then
+        error stop "particle_data_m/get_particle_arrays::ERROR:: array given in argument is already allocated"
+    end if
+
+    allocate(particles(mv_pdata%N_part))
+    particles(:) = mv_pdata%particles(:) !deep copy
 
 end subroutine
 

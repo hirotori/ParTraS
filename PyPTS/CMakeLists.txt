@@ -1,6 +1,7 @@
 add_library(pypts SHARED
-    init.f90
+    field.f90
     motions.f90
+    particle.f90
     simulation.f90
     update.f90
     util.f90

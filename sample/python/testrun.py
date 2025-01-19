@@ -40,3 +40,5 @@ simulation.initialize(100, True, "data",
                       100, False, "data")
 
 simulation.run(1, 1000)
+
+pdata.get_particle_data()
