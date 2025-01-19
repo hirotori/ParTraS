@@ -33,7 +33,7 @@ dt = 0.0001
 motions.droplet(rho_f, mu_f, rho_p, dt, n_rk)
 
 # updater is disabled (i.e. steady flow)
-update.vtkUpdater.no_update()
+update.no_update()
 
 # simulation
 simulation.initialize(100, True, "data", 
