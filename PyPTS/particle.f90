@@ -1,50 +1,15 @@
-module init_m
+module particle_m
     use iso_c_binding
     use util_m
     use kind_parameters_m
-    use base_importer_m
-    use vtk_importer_m
-    use flow_field_m
     use particle_data_m
     implicit none
     
+    type(particle_t),allocatable,private :: tmp_(:)
+        !! temporary particle array used for passing data to python
+
 contains
-
-subroutine init_field_vtk(c_filename, ascii) bind(c, name="init_field_vtk")
-    character(c_char),dimension(*),intent(in) :: c_filename
-    logical(c_bool),intent(in) :: ascii
-
-    character(:),allocatable :: filename
-    type(vtk_importer_t) vtk_importer_
-    type(ugrid_struct_t) ugrid_
-
-    filename = fstring(c_filename)
-
-    if ( ascii ) then
-        call vtk_importer_%open_ascii_on() 
-    else
-        call vtk_importer_%open_ascii_off()
-    endif
-
-    call vtk_importer_%open_stream_on()
-
-    call vtk_importer_%open_file(filename)
-    call vtk_importer_%read_file(ugrid_, .true.)
-    call vtk_importer_%close()
-
-    call construct_flow_field(ugrid_, CELL_TYPE_VTK, FACE_VERT_DEF_VTK)
-
-    call delete_ugrid(ugrid_)
-
-end subroutine
-
-! subroutine init_field_scflow(filename)
-!     character(*),intent(in) :: filename
-
-
-! end subroutine
-
-
+    
 subroutine init_particle_data(n, particles) bind(c, name="init_particle_data")
     integer(c_int),intent(in) :: n
     type(particle_t),intent(in) :: particles(n)
@@ -54,6 +19,31 @@ subroutine init_particle_data(n, particles) bind(c, name="init_particle_data")
     mv_pdata%particles(:) = particles(:)
 
 end subroutine
+
+
+subroutine get_particle_data_size(n) bind(c, name="get_particle_data_size")
+    integer(c_int),intent(out) :: n
+
+    n = mv_pdata%N_part
+
+end subroutine
+
+subroutine get_particle_data(n, particles) bind(c, name="get_particle_data")
+    integer(c_int),intent(in) :: n
+    type(particle_t),intent(inout) :: particles(n)
+
+    if ( n /= mv_pdata%N_part ) then
+        error stop "particle_m/get_particle_data::ERROR:: number of particles doesn't match with current number"
+    end if
+
+    call get_particle_arrays(tmp_)
+
+    particles(1:n) = tmp_(1:n)
+
+    deallocate(tmp_)
+
+end subroutine
+
 
 subroutine init_randomize_particle(center, width, seed, n, radius)
     real(c_double),dimension(3) :: center
@@ -97,4 +87,6 @@ subroutine init_randomize_particle(center, width, seed, n, radius)
     end subroutine
 end subroutine
 
-end module
+
+
+end module particle_m

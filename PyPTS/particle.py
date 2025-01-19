@@ -35,6 +35,15 @@ _pypts._pypts_flib.init_particle_data.argtypes = [ctypes.POINTER(ctypes.c_int),
 _pypts._pypts_flib.init_particle_data.restype = None
 
 
+_pypts._pypts_flib.get_particle_data_size.argtypes = [ctypes.POINTER(ctypes.c_int)]
+_pypts._pypts_flib.get_particle_data_size.restype = None
+
+
+_pypts._pypts_flib.get_particle_data.argtypes = [ctypes.POINTER(ctypes.c_int),
+                                                  np.ctypeslib.ndpointer(dtype=Particle)]
+_pypts._pypts_flib.get_particle_data.restype = None
+
+
 class ParticleData:
     """
     particle data object
@@ -126,7 +135,21 @@ class ParticleData:
 
 
     def initialize_particle_data(self):
+        """
+        pass particle data to fortran
+
+        """
         _pypts._pypts_flib.init_particle_data(ctypes.byref(ctypes.c_int(self.n_)),
                                               self.particles_)
         _pypts.logger.info("particle data passed to `init_particle_data`")
+
+    def get_particle_data(self):
+        """
+        get current particle data from Fortran 
+        """
+
+        _pypts._pypts_flib.get_particle_data_size(ctypes.byref(ctypes.c_int(self.n_)))
+        self.particles_ = np.empty(self.n_, dtype=Particle)
+        _pypts._pypts_flib.get_particle_data(ctypes.byref(ctypes.c_int(self.n_)), self.particles_)
+        _pypts.logger.info("Get current particle data from Fortran")
         

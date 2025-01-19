@@ -33,10 +33,12 @@ dt = 0.0001
 motions.droplet(rho_f, mu_f, rho_p, dt, n_rk)
 
 # updater is disabled (i.e. steady flow)
-update.vtkUpdater.no_update()
+update.no_update()
 
 # simulation
-simulation.initialize(100, True, "../suteru/data_", 
-                      100, False, "../suteru/data_")
+simulation.initialize(100, True, "data", 
+                      100, False, "data")
 
 simulation.run(1, 1000)
+
+pdata.get_particle_data()
