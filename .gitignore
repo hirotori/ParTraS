@@ -2,6 +2,7 @@
 *.vtk
 !sax_flow.vtk
 !quiescent.vtk
+!test/*.vtk
 *build*
 *.dylib
 *.so
