@@ -7,4 +7,5 @@
 *.mod
 *.vscode
 *main*
+!main.f90
 *.DS_Store
