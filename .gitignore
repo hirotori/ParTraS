@@ -1,5 +1,7 @@
 *.pdata
 *.vtk
+!sax_flow.vtk
+!quiescent.vtk
 *build*
 *.dylib
 *.so
