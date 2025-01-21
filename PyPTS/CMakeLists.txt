@@ -21,6 +21,11 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES GNU)
     )
 endif()
 
+set_target_properties(pypts PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    OUTPUT_NAME pypts
+)
+
 if(OpenMP_Fortran_FOUND)
     target_compile_options(pypts PRIVATE 
         "${OpenMP_Fortran_FLAGS}"
@@ -28,16 +33,11 @@ if(OpenMP_Fortran_FOUND)
 
     target_link_libraries(pypts 
         OpenMP::OpenMP_Fortran 
+        partras
     )
 
 else()
     # OpenMPをサポートしない場合.
+    target_link_libraries(pypts PRIVATE partras)
 
 endif()
-
-set_target_properties(pypts PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    OUTPUT_NAME pypts
-)
-
-target_link_libraries(pypts PRIVATE partras)

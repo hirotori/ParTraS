@@ -29,11 +29,11 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES GNU)
 endif()
 
 if(OpenMP_Fortran_FOUND)
-    target_compile_options(kitmpcd PRIVATE 
+    target_compile_options(partras PRIVATE 
         "${OpenMP_Fortran_FLAGS}"
     )
 
-    target_link_libraries(kitmpcd 
+    target_link_libraries(partras
         OpenMP::OpenMP_Fortran 
     )
 
