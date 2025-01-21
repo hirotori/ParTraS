@@ -76,6 +76,8 @@ subroutine construct_particle_data(n)
     mv_pdata%N_part = n
     allocate(mv_pdata%particles(n))
 
+    print "('particle_data_m/construct_particle_data::INFO:: particle data constructed, n = ', i0)", mv_pdata%N_part
+
 end subroutine
 
 subroutine delete_particle_data()

@@ -35,30 +35,54 @@ _pypts._pypts_flib.init_particle_data.argtypes = [ctypes.POINTER(ctypes.c_int),
 _pypts._pypts_flib.init_particle_data.restype = None
 
 
-_pypts._pypts_flib.get_particle_data_size.argtypes = [ctypes.POINTER(ctypes.c_int)]
-_pypts._pypts_flib.get_particle_data_size.restype = None
+_pypts._pypts_flib.get_particle_data_size.argtypes = []
+_pypts._pypts_flib.get_particle_data_size.restype = ctypes.c_int
 
 
 _pypts._pypts_flib.get_particle_data.argtypes = [ctypes.POINTER(ctypes.c_int),
                                                   np.ctypeslib.ndpointer(dtype=Particle)]
 _pypts._pypts_flib.get_particle_data.restype = None
 
+_pypts._pypts_flib.restore_particle_data.argtypes = [ctypes.c_char_p]
+_pypts._pypts_flib.restore_particle_data.restype  = None
+
 
 class ParticleData:
     """
-    particle data object
+    particle data object.
+
+    This is an interface of `mv_pdata` (`particle_data_t`). 
+
+    Users can create data and pass it to fortran, or restore data from backup and copy it to Python.
+
     """
-    def __init__(self, n:int) -> None:
+    def __init__(self, arg, copy=False) -> None:
         """
-        Create particle data.
+        Create a particle data. 
+
+        
+        A copy of particle data can be passed to Fortran. 
 
         Parameter
         ------------
 
-        n (int) : number of particles
+        arg (int or str) : number of particles or filename of backup data.
+
+        copy (bool)      : copy particle data from Fortran when load backup data.
+        Note that  restored data is directly passed to Fortran and not passed to Python if `copy` is false.
+
         """
-        self.n_ = n
-        self.particles_ = np.empty(n, dtype=Particle)
+        if isinstance(arg, int):
+            self.n_ = arg
+            self.particles_ = np.empty(self.n_, dtype=Particle)
+        elif isinstance(arg, str):
+            _pypts._pypts_flib.restore_particle_data(arg.encode())
+            _pypts.logger.info(f"Particle Data is restored from '{arg}'")
+            if copy:
+                self.get_particle_data()
+
+        else:
+            raise ValueError("Argument must be int or str.")
 
     @property
     def pos(self):
@@ -90,7 +114,7 @@ class ParticleData:
 
     @property
     def radius(self):
-        """position of particles"""
+        """radius of particles"""
         return self.particles_[:]["radius"]
 
     @radius.setter
@@ -136,7 +160,7 @@ class ParticleData:
 
     def initialize_particle_data(self):
         """
-        pass particle data to fortran
+        pass particle data to fortran. 
 
         """
         _pypts._pypts_flib.init_particle_data(ctypes.byref(ctypes.c_int(self.n_)),
@@ -148,7 +172,7 @@ class ParticleData:
         get current particle data from Fortran 
         """
 
-        _pypts._pypts_flib.get_particle_data_size(ctypes.byref(ctypes.c_int(self.n_)))
+        self.n_ = _pypts._pypts_flib.get_particle_data_size()
         self.particles_ = np.empty(self.n_, dtype=Particle)
         _pypts._pypts_flib.get_particle_data(ctypes.byref(ctypes.c_int(self.n_)), self.particles_)
         _pypts.logger.info("Get current particle data from Fortran")

@@ -3,6 +3,7 @@ module particle_m
     use util_m
     use kind_parameters_m
     use particle_data_m
+    use dump_file_m, only : load_from_backup
     implicit none
     
     type(particle_t),allocatable,private :: tmp_(:)
@@ -21,12 +22,11 @@ subroutine init_particle_data(n, particles) bind(c, name="init_particle_data")
 end subroutine
 
 
-subroutine get_particle_data_size(n) bind(c, name="get_particle_data_size")
-    integer(c_int),intent(out) :: n
+integer(c_int) function get_particle_data_size() result(n) bind(c, name="get_particle_data_size")
 
     n = mv_pdata%N_part
 
-end subroutine
+end function
 
 subroutine get_particle_data(n, particles) bind(c, name="get_particle_data")
     integer(c_int),intent(in) :: n
@@ -44,6 +44,16 @@ subroutine get_particle_data(n, particles) bind(c, name="get_particle_data")
 
 end subroutine
 
+subroutine restore_particle_data(filename) bind(c, name="restore_particle_data")
+    character(1, kind=c_char),dimension(*),intent(in) :: filename
+
+    character(:),allocatable :: fname_
+
+    fname_ = fstring(filename)
+
+    call load_from_backup(fname_, .false.)
+
+end subroutine
 
 subroutine init_randomize_particle(center, width, seed, n, radius)
     real(c_double),dimension(3) :: center
