@@ -48,6 +48,7 @@ module flow_field_m
            update_flow_field, &
            search_reference_cell, &
            delete_mesh_field, &
+           scale_field_variables, &
            REFCELL_NOTFOUND, REFCELL_OUTBOUNDS
 
 contains
@@ -235,6 +236,19 @@ pure subroutine search_reference_cell(r0, ri, ref_cell, nrepeat)
 
     !見つからない場合, 距離判定に切り替える. まだ実装してないので, NOTFOUNDを返す. 
     ref_cell = REFCELL_NOTFOUND
+end subroutine
+
+subroutine scale_field_variables(L_ref, U_ref)
+    !! scale field variables by reference values
+    real(DP),intent(in),optional :: L_ref
+        !! reference length
+    real(DP),intent(in),optional :: U_ref
+        !! reference velocity
+
+    if ( present(U_ref) ) then
+        mv_flow_field%velocity(:,:) = mv_flow_field%velocity(:,:)/U_ref
+    end if
+
 end subroutine
 
 subroutine delete_mesh_field()
