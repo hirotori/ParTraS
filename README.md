@@ -16,6 +16,7 @@ ParTraS は、非構造格子で計算された流れ場を浮遊する微粒子
 - 拡張により任意の非構造格子データもインポート可能
 - 飛沫, エアロゾルのシミュレーションに対応
 - 100% Modern Fortranで記述
+- OpenMPによる粒子運動の並列処理
 - Pythonインターフェース `PyPTS` によるシミュレーションの実行
 
 ### PyPTS
@@ -34,11 +35,16 @@ ParTraS は、非構造格子で計算された流れ場を浮遊する微粒子
 ## インストール方法 (Installation)
 
 ### 必要な環境
-- Fortran コンパイラ: 以下のコンパイラで動作が確認されています
-  - gfortran
+動作が確認されたバージョンを括弧内に記載した. 
+- Fortran
+  - gfortran (homebrew GCC 14.2.0)
   - ifort
-- Git
-- CMake
+- Git (2.39.2, Apple Git-143)
+- CMake (3.26.4)
+- OpenMP
+- Python (3.9.6)
+- numpy (1.24.4)
+- ctypes (1.1.0)
 
 ### 手順
 1. リポジトリをクローンします:
@@ -55,6 +61,7 @@ ParTraS は、非構造格子で計算された流れ場を浮遊する微粒子
    オプションでビルド方法とコンパイラを設定できる. 
    - `-DCMAKE_BUILD_TYPE`: `debug`, `release`
    - `-DCMAKE_Fortran_COMPILER`: `gfortan`, `ifort`
+   - `-Duse_OpenMP`: OpenMPを使ってコンパイルするかのフラグ. `yes`, `no` (default=`no`)
 
     `gfortran`を使って`release`でビルドする場合
     ```bash
@@ -68,7 +75,7 @@ ParTraS は、非構造格子で計算された流れ場を浮遊する微粒子
    make
    ```
 
-4. `PyPTS`を使用する場合は, 環境変数にパスを追加してください. 
+4. `PyPTS`を使用する場合は, このディレクトリのパスを環境変数に追加してください. `/Users/username/`にダウンロードした場合は次のようにする. 
    
    ```bash
    export PYTHONPATH=/Users/username/partras/":$PYTHONPATH"
