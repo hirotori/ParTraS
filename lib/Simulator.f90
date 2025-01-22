@@ -6,6 +6,7 @@ module simulator_m
     use flow_field_m
     use dump_file_m, only: write_out_backup, writeout_vtk
     use field_updater_m
+    use version_m
     !$ use omp_lib
     implicit none
     private
@@ -159,7 +160,7 @@ subroutine run(this, nstart, nend)
     !$ integer nthread, maxthread
 
     print "(A)", "============================================== "
-    print "(A)", "          ParTraS - Version 0.0.0              "
+    print "(A)", "          ParTraS - Version "//get_version()
     print "(A)", "       Particle Trajectory Simulator           "
     print "(A)", "============================================== "
     print "(A)", " " 
