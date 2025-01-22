@@ -12,6 +12,7 @@ add_library(partras STATIC
     Simulator.f90
     UnstructuredMesh.f90
     VTKImporter.f90
+    Version.f90
 )
 
 if(CMAKE_Fortran_COMPILER_ID MATCHES Intel)
