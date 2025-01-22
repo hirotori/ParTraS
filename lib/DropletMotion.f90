@@ -87,7 +87,7 @@ pure subroutine integrate_one_step(this, part)
 
 end subroutine
 
-subroutine update_status(this, part, timestep)
+pure subroutine update_status(this, part, timestep)
     class(droplet_motion_t),intent(in) :: this
     type(particle_t),intent(inout) :: part
     integer,intent(in) :: timestep

@@ -32,13 +32,15 @@ pure real(DP) function get_dt(this) result(dt)
 end function
 
 subroutine proceed_time_step(this, timestep)
-    !! 
+    !! この処理はスレッドセーフではない. 
+    !! @NOTE: pdataを引数にわたす形にすれば解決はするはず. 
     class(motion_t),intent(in) :: this
     integer,intent(in) :: timestep
 
     integer i
     type(particle_t) :: part_
 
+    !$omp parallel do private(part_)
     do i = 1, mv_pdata%N_part
 
         ! load
@@ -64,7 +66,10 @@ pure subroutine integrate_one_step_impl(this, part)
 
 end subroutine
 
-subroutine update_status_impl(this, part, timestep)
+pure subroutine update_status_impl(this, part, timestep)
+    !! update particle status
+    !! this is called before `integrate_one_step`.
+    !! this procedure must be thread-safe.
     class(motion_t),intent(in) :: this
     type(particle_t),intent(inout) :: part
     integer,intent(in) :: timestep

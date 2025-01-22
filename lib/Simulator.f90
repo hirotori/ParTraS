@@ -6,6 +6,7 @@ module simulator_m
     use flow_field_m
     use dump_file_m, only: write_out_backup, writeout_vtk
     use field_updater_m
+    !$ use omp_lib
     implicit none
     private
     
@@ -155,6 +156,7 @@ subroutine run(this, nstart, nend)
     integer,intent(in) :: nend
 
     integer ncyc, i
+    !$ integer nthread, maxthread
 
     print "(A)", "============================================== "
     print "(A)", "          ParTraS - Version 0.0.0              "
@@ -169,8 +171,9 @@ subroutine run(this, nstart, nend)
     print "(A)", "  in various environments.                       "
     print "(A)", " "
     print "(A)", "Copyright (C) 2025-                              "
+    print "(A)", "Takahiro Ikeda, and                              "
     print "(A)", "Advanced Fluid Dynamics and Energy Transfer Lab. "
-    print "(A)", "(AFDET) All rights reserved."
+    print "(A)", "(AFDET) All rights reserved.                     "
     print "(A)", "==============================================   "
 
     
@@ -221,12 +224,22 @@ subroutine run(this, nstart, nend)
     
     end if
 
+    !$ print "('simulator_m/simulator_t%run::INFO::Simulation with OpenMP')"
+    !$omp parallel
+    !$omp single
+    !$ nthread = omp_get_num_threads()
+    !$ maxthread = omp_get_max_threads()
+    !$omp end single
+    !$omp end parallel
+    !$ print "('simulator_m/simulator_t%run::INFO::Num of thread = ', i0, '/', i0)", nthread, maxthread
+
     do ncyc = nstart, nend
 
         if ( mod(ncyc, this%nwrite_) == 0 ) then
             !TODO: コンソール出力のタイミング制御と, 何を表示するかの策定. 
             print "(A)",    "-----------------------------------------------"
             print "(A,i0,A,f16.5,A)", "Timestep = ", ncyc, " t = (", ncyc*this%motion_%get_dt(), ") "
+            !$ print "(A,i0)", "Num Thread = ", nthread
             print "(A)",    "-----------------------------------------------"                
             print "('There are ', i0, ' floating particles')", count(mv_pdata%particles(:)%state == PARTICLE_ACTIVATE)
         end if

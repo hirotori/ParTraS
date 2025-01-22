@@ -4,6 +4,7 @@ program main
     use flow_field_m
     use particle_data_m
     use droplet_motion_m
+    !$ use omp_lib
     implicit none
 
     integer i, n
@@ -17,6 +18,9 @@ program main
     type(vtk_importer_t) vtk_importer
     type(ugrid_struct_t) vtk_ugrid
     type(droplet_motion_t) motion
+    !$ integer nthread = 1
+
+    !$ call omp_set_num_threads(nthread)
 
     call vtk_importer%open_stream_on()
     call vtk_importer%open_ascii_on()
@@ -25,7 +29,7 @@ program main
     call construct_flow_field(vtk_ugrid, CELL_TYPE_VTK, FACE_VERT_DEF_VTK)
     call delete_ugrid(vtk_ugrid)
 
-    call construct_particle_data(1)
+    call construct_particle_data(200)
     
     ! initialize particle status
     zmax = maxval(mv_flow_field%cell_centers(3,:))
@@ -34,6 +38,7 @@ program main
         mv_pdata%particles(i)%vel = 0.d0
         mv_pdata%particles(i)%state = PARTICLE_ACTIVATE
         mv_pdata%particles(i)%radius = rad_p
+        mv_pdata%particles(i)%ref_cell = 1
 
         call search_reference_cell(mv_pdata%particles(i)%pos, mv_pdata%particles(i)%pos, mv_pdata%particles(i)%ref_cell, 100)
 

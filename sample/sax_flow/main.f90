@@ -7,15 +7,19 @@ program main
     use droplet_motion_m
     use field_updater_m
     use simulator_m
+    !$ use omp_lib
 
     implicit none
     integer nstep, nactive
-    integer,parameter :: Npart = 20
+    integer,parameter :: Npart = 200
     real(DP),dimension(3) :: r0
     type(droplet_motion_t) motion
     type(ugrid_struct_t) vtk_ugrid
     type(vtk_importer_t) vtk_importer
     logical :: write_ascii = .true.
+    !$ integer :: nthread = 1
+
+    !$ call omp_set_num_threads(nthread)
 
     call vtk_importer%open_file("sax_flow.vtk")
     call vtk_importer%read_file(vtk_ugrid, .true.)
@@ -44,7 +48,7 @@ program main
             r_ = r0 + dr
             mv_pdata%particles(i)%pos = r_
             mv_pdata%particles(i)%vel = 0.0
-            mv_pdata%particles(i)%radius = 7d-5
+            mv_pdata%particles(i)%radius = 1d-5
             mv_pdata%particles(i)%state = PARTICLE_ACTIVATE
             mv_pdata%particles(i)%f   = 0.0
             mv_pdata%particles(i)%ref_cell = 1
@@ -66,9 +70,9 @@ program main
 
     call mv_field_updater%disable_updater()
 
-    call mv_simulator%construct_simulator(10, write_ascii, 10, .false.)
+    call mv_simulator%construct_simulator(10000, write_ascii, "./data", 10000, .false., "./data")
     call mv_simulator%set_motion(motion)
-    call mv_simulator%run(1, 10)
+    call mv_simulator%run(1, 100000)
 
     ! run again
     ! call mv_simulator%set_dump_settings(1000, .true.)
