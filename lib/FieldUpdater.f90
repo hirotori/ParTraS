@@ -28,6 +28,7 @@ module field_updater_m
         character(:),allocatable :: ext_
         integer:: pad_
         logical field_only_
+        logical verts_only_
 
         logical is_assigned_
 
@@ -59,7 +60,7 @@ logical function assigned(this)
 end function
 
 subroutine construct_field_updater(this, importer, cell_type_def, face_vert_def, dt_f, dt_p, &
-                                   basename, pad, ext, field_only, interval)
+                                   basename, pad, ext, field_only, verts_only, interval)
     !! create field_updater object
     class(field_updater_t),intent(inout) :: this
     class(ugrid_importer_t),intent(in) :: importer
@@ -80,6 +81,8 @@ subroutine construct_field_updater(this, importer, cell_type_def, face_vert_def,
         !! extension of filename (for example: .vtk, .fph)
     logical,intent(in) :: field_only
         !! update cell velocity only
+    logical,intent(in) :: verts_only
+        !! update cell vertices only. This flag is valid only if field_only is false.
     integer,intent(in) :: interval
         !! Output interval of flow field file
 
@@ -101,6 +104,7 @@ subroutine construct_field_updater(this, importer, cell_type_def, face_vert_def,
     this%ext_ = ext
 
     this%field_only_ = field_only
+    this%verts_only_ = verts_only
     this%interval_ = interval
 
     this%counter_ = 1
@@ -137,7 +141,7 @@ subroutine update_field(this, ncyc)
 
         call this%importer_%read_file(ugrid_, .true.)
         
-        call update_flow_field(ugrid_, this%ct_, this%fv_def_, this%field_only_)
+        call update_flow_field(ugrid_, this%ct_, this%fv_def_, this%field_only_, this%verts_only_)
     
         call this%importer_%close()
 
