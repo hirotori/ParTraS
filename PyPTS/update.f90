@@ -9,12 +9,13 @@ module update_m
     public :: update_field_vtk
 contains
 
-subroutine update_field_vtk(dt_f, dt_p, basename, pad, field_only, interval, ascii) bind(c, name="update_field_vtk")
+subroutine update_field_vtk(dt_f, dt_p, basename, pad, field_only, verts_only, interval, ascii) bind(c, name="update_field_vtk")
     real(c_double),intent(in) :: dt_f
     real(c_double),intent(in) :: dt_p
     character(1, kind=c_char),dimension(*),intent(in) :: basename
     integer(c_int),intent(in) :: pad
     logical(c_bool),intent(in) :: field_only
+    logical(c_bool),intent(in) :: verts_only
     integer(c_int),intent(in) :: interval
     logical(c_bool),intent(in) :: ascii
 
@@ -29,7 +30,7 @@ subroutine update_field_vtk(dt_f, dt_p, basename, pad, field_only, interval, asc
     end if
 
     call mv_field_updater%construct_field_updater(vtk_importer, CELL_TYPE_VTK, FACE_VERT_DEF_VTK, &
-    dt_f, dt_p, fstring(basename), pad, ".vtk", logical(field_only), interval)
+    dt_f, dt_p, fstring(basename), pad, ".vtk", logical(field_only), logical(verts_only), interval)
 
 end subroutine
 

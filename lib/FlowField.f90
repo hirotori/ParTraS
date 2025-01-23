@@ -63,7 +63,7 @@ subroutine construct_flow_field_importer(ugrid, cell_type_def, face_vert_def)
 
     ! これを呼び出す際はフィールド変数はすべて未割り付けと仮定. 
     ! すでに割り付けしているのにこれを呼び出した場合: 一旦delete処理が入るので普通に動く. 
-    call update_flow_field(ugrid, cell_type_def, face_vert_def, .false.)
+    call update_flow_field(ugrid, cell_type_def, face_vert_def, .false., .false.)
 
 end subroutine
 
@@ -89,7 +89,7 @@ subroutine construct_flow_field_arr(ncell, nvert, connectivities, offsets, cell_
 
     call construct_half_faces(ncell, nvert, connectivities, offsets, cell_types, cell_type_def, face_vert_def)
 
-    call update_members_(ncell, nvert, connectivities, offsets, verts, vel, .false.)
+    call update_members_(ncell, nvert, connectivities, offsets, verts, vel, .false., .false.)
 
     call delete_half_faces()
 
@@ -97,7 +97,7 @@ subroutine construct_flow_field_arr(ncell, nvert, connectivities, offsets, cell_
 
 end subroutine
 
-subroutine update_members_(ncell, nvert, connectivities, offsets, verts, vel, field_only)
+subroutine update_members_(ncell, nvert, connectivities, offsets, verts, vel, field_only, verts_only)
     integer,intent(in) :: ncell
         !! number of cell
     integer,intent(in) :: nvert
@@ -112,31 +112,44 @@ subroutine update_members_(ncell, nvert, connectivities, offsets, verts, vel, fi
         !! velocity
     logical,intent(in) :: field_only
         !! whether it updates field vairable (cell velocity) only or not
+    logical,intent(in) :: verts_only
+        !! whether it updates vertices only or not. Only valid if field_only == .false.
 
     ! 一旦すべて解放して再度割り付けるのは計算コストが高いと予想される. 
     ! 隣接関係は変わらないと仮定すれば, 流体の速度(cell_velocity)だけ変更すれば良いのでdeleteは不要. 
     if ( .not. field_only ) then 
 
-        ! 要素数が変わる可能性があるので, すべて解放する. 
-        call delete_mesh_field()
+        if ( verts_only ) then
+            ! 格子点だけ更新する場合. 
+            if ( size(verts, dim=2) /= size(mv_flow_field%verts, dim=2) ) then
+                error stop "flow_field_m/update_members_::ERROR::num of verts must be equal when updating verts only."
+            end if
+            mv_flow_field%verts(:,:) = verts(:,:)
+        else
+            ! 接続関係含めすべて. 
 
-        !geometry
-        allocate(mv_flow_field%verts, source=verts)
-        call create_cell_verts(ncell, connectivities, offsets, mv_flow_field%cell2verts)
-        call create_faces(mv_flow_field%face2cells, mv_flow_field%face2verts)
-        call create_boundary_faces(mv_flow_field%face2cells, mv_flow_field%boundary_faces)
-        call create_cell_faces(ncell, mv_flow_field%face2cells, mv_flow_field%cell2faces, mv_flow_field%cell_offsets)
-        
-        mv_flow_field%ncell = ncell
-        mv_flow_field%nvert = nvert
-        mv_flow_field%nface = size(mv_flow_field%face2cells, dim=2)
-        
-        allocate(mv_flow_field%cell_centers(3,mv_flow_field%ncell))
-        call compute_cell_centers(mv_flow_field%cell2verts, mv_flow_field%verts, mv_flow_field%cell_centers)
-        allocate(mv_flow_field%face_centers(3,mv_flow_field%nface))
-        allocate(mv_flow_field%face_normals(3,mv_flow_field%nface))
-        call compute_face_centers_and_normals(mv_flow_field%face2verts, mv_flow_field%verts, mv_flow_field%face_centers, mv_flow_field%face_normals)
-        
+            ! 要素数が変わる可能性があるので, すべて解放する. 
+            call delete_mesh_field()
+            
+            !geometry
+            allocate(mv_flow_field%verts, source=verts)
+            call create_cell_verts(ncell, connectivities, offsets, mv_flow_field%cell2verts)
+            call create_faces(mv_flow_field%face2cells, mv_flow_field%face2verts)
+            call create_boundary_faces(mv_flow_field%face2cells, mv_flow_field%boundary_faces)
+            call create_cell_faces(ncell, mv_flow_field%face2cells, mv_flow_field%cell2faces, mv_flow_field%cell_offsets)
+            
+            mv_flow_field%ncell = ncell
+            mv_flow_field%nvert = nvert
+            mv_flow_field%nface = size(mv_flow_field%face2cells, dim=2)
+            
+            allocate(mv_flow_field%cell_centers(3,mv_flow_field%ncell))
+            call compute_cell_centers(mv_flow_field%cell2verts, mv_flow_field%verts, mv_flow_field%cell_centers)
+            allocate(mv_flow_field%face_centers(3,mv_flow_field%nface))
+            allocate(mv_flow_field%face_normals(3,mv_flow_field%nface))
+            call compute_face_centers_and_normals(mv_flow_field%face2verts, mv_flow_field%verts, mv_flow_field%face_centers, mv_flow_field%face_normals)
+            
+        end if
+
         !field variable
         allocate(mv_flow_field%velocity, source=vel)
 
@@ -147,7 +160,7 @@ subroutine update_members_(ncell, nvert, connectivities, offsets, verts, vel, fi
 
 end subroutine
 
-subroutine update_flow_field(ugrid, cell_type_def, face_vert_def, field_only)
+subroutine update_flow_field(ugrid, cell_type_def, face_vert_def, field_only, verts_only)
     !! update flow field. 
     type(ugrid_struct_t),intent(in) :: ugrid
         !! unstructured grid importer
@@ -156,10 +169,12 @@ subroutine update_flow_field(ugrid, cell_type_def, face_vert_def, field_only)
     type(face_vertex_def_t),intent(in) :: face_vert_def
         !! face-vertex connectivity definition
     logical,intent(in) :: field_only
+    logical,intent(in) :: verts_only
 
-    if ( .not. field_only ) call construct_half_faces(ugrid, cell_type_def, face_vert_def)
 
-    call update_members_(ugrid%ncell, ugrid%nvert, ugrid%conns, ugrid%offsets, ugrid%verts, ugrid%cell_velocity, field_only)
+    if ( .not. field_only .and. .not. verts_only) call construct_half_faces(ugrid, cell_type_def, face_vert_def)
+
+    call update_members_(ugrid%ncell, ugrid%nvert, ugrid%conns, ugrid%offsets, ugrid%verts, ugrid%cell_velocity, field_only, verts_only)
 
     ! delete current data of half faces
     call delete_half_faces()
@@ -269,6 +284,8 @@ subroutine delete_mesh_field()
     mv_flow_field%ncell = 0
     mv_flow_field%nvert = 0
     mv_flow_field%nface = 0
+
+    mv_flow_field%is_assigned = .false.
 
 end subroutine
 

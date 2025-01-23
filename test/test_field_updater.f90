@@ -26,7 +26,7 @@ program test_field_updater
     dt_p = 0.01
     call mv_field_updater%construct_field_updater(importer, CELL_TYPE_VTK, FACE_VERT_DEF_VTK, & 
                                                   dt_f, dt_p, &
-                                                  "flow_", 0, ".vtk", .true., 1)
+                                                  "flow_", 0, ".vtk", .true., .true., 1)
 
     do ncyc = 1, 9
 
