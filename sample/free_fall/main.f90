@@ -48,7 +48,7 @@ program main
     end do
 
     dt = 0.001d0
-    call motion%construct_droplet_motion(rho_f, mu_f, rho_p, dt, n_rk)
+    call motion%construct_droplet_motion(dt, 1.d0, 1.d0, rho_f, mu_f, rho_p, n_rk)
     ! Heun法 (2次ルンゲ・クッタ法) で離散化している.
     ! dt = 0.01とすると粒子が上に移動する. 力が+-振動し, 振幅が大きくなっていく. 
     ! dt = 0.001とすると計算はできた. 

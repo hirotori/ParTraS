@@ -30,7 +30,8 @@ mu_p  = 0.001
 rho_f = 1.0
 mu_f  = 1e-5
 dt = 0.0001
-motions.droplet(rho_f, mu_f, rho_p, dt, n_rk)
+L = U = 1.0
+motions.droplet(dt, L, U, rho_f, mu_f, rho_p, n_rk)
 
 # updater is disabled (i.e. steady flow)
 update.no_update()

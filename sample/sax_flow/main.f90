@@ -64,8 +64,10 @@ program main
         real(8),parameter :: rho_f = 1.d0
         real(8),parameter :: mu_f  = 1d-5
         real(8),parameter :: dt = 0.001
+        real(8),parameter :: Lref = 1.0d0
+        real(8),parameter :: Uref = 1.0d0
 
-        call motion%construct_droplet_motion(rho_f, mu_f, rho_p, dt, n_rk)
+        call motion%construct_droplet_motion(dt, Lref, Uref, rho_f, mu_f, rho_p, n_rk)
     end block
 
     call mv_field_updater%disable_updater()

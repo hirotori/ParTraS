@@ -7,17 +7,11 @@ module droplet_motion_m
     private
 
     type,extends(motion_t) :: droplet_motion_t
-        real(DP),private :: rho_f
-            !! density of fluid
-        real(DP),private :: mu_f
-            !! viscosity of fluid
         real(DP),private :: rho_p
             !! density of particle
         integer,private :: n_rk
             !! number of steps in Runge-Kutta
 
-        real(DP),private :: nu_f
-            !! kinetic viscosity of fluid
         real(DP),private :: coeff_f
 
         real(DP),private :: g_(3) = [real(DP):: 0.0, 0.0, -9.81]
@@ -33,21 +27,33 @@ module droplet_motion_m
 
 contains
     
-subroutine construct_droplet_motion(this, rho_f, mu_f, rho_p, dt, RK_order)
+subroutine construct_droplet_motion(this, dt, L_ref, U_ref, rho_f, mu_f, rho_p, RK_order)
+    !! construct an object describing the motion of droplets.
+    !! equations of motions are non-dimensionalized by four characteristic variables:
+    !! length, velocity, density, and viscosity.
+    !! We assume density and viscosity of fluid to be reference density and viscosity, respectively.
+
     class(droplet_motion_t),intent(inout) :: this
-    real(DP),intent(in) :: rho_f
-    real(DP),intent(in) :: mu_f
-    real(DP),intent(in) :: rho_p
     real(DP),intent(in) :: dt
+        !! time stepping size [s]
+    real(DP),intent(in) :: L_ref
+        !! reference length [m]
+    real(DP),intent(in) :: U_ref
+        !! reference velocity [m/s]
+    real(DP),intent(in) :: rho_f
+        !! density of fluid [kg/m3]
+    real(DP),intent(in) :: mu_f
+        !! viscosity of fluid [Pa*s]
+    real(DP),intent(in) :: rho_p
+        !! density of particle
     integer,intent(in) :: RK_order
+        !! the order of Runge-Kutta scheme
 
-    this%rho_f = rho_f
-    this%rho_p = rho_p
-    this%nu_f = mu_f/rho_f
     this%coeff_f = 3./8.*(rho_f/rho_p)
-    call this%construct_motion(dt)
+    call this%construct_motion(dt, L_ref, U_ref, rho_f, mu_f)
     this%n_rk = RK_order
-
+    this%g_ = this%g_/(U_ref*U_ref/L_ref)
+    print*, this%g_, this%get_Re_ref()
 end subroutine
 
 pure subroutine integrate_one_step(this, part)
@@ -112,7 +118,7 @@ pure subroutine compute_force_droplet(this, v, u, rad, f)
 
     dv = u - v
     dv_norm = sqrt(sum(dv*dv))
-    Re_p_ = dv_norm*2*rad/this%nu_f
+    Re_p_ = dv_norm*2*rad*this%get_Re_ref()
     f(:) = this%coeff_f*Cd(Re_p_)/rad*dv_norm*dv + this%g_
 
 end subroutine
