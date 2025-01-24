@@ -30,7 +30,8 @@ module unstructured_mesh_m
            create_boundary_faces, &
            create_cell_faces, &
            create_cell_verts, &
-           delete_half_faces
+           delete_half_faces, &
+           CELL_VERT_SIZE, FACE_VERT_SIZE
 
     contains
 

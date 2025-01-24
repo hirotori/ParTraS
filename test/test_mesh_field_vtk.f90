@@ -15,8 +15,8 @@ program test
     call vtk_importer%close()
 
     allocate(v(3,vtk_ugrid%ncell), source=0.d0)
-    call construct_flow_field(vtk_ugrid%ncell, vtk_ugrid%nvert, vtk_ugrid%conns, &
-                              vtk_ugrid%offsets, vtk_ugrid%cell_types, vtk_ugrid%verts, v, &
+    vtk_ugrid%cell_velocity = v
+    call construct_flow_field(vtk_ugrid, &
                               CELL_TYPE_VTK, FACE_VERT_DEF_VTK)
 
     call delete_ugrid(vtk_ugrid)

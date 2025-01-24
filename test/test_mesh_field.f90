@@ -1,5 +1,6 @@
 program test
     use vtk_importer_m, only : CELL_TYPE_VTK, FACE_VERT_DEF_VTK
+    use base_importer_m, only : ugrid_struct_t
     use flow_field_m
     implicit none
     integer,parameter :: nvert = 12
@@ -60,8 +61,17 @@ program test
                                                        [ 0.0, 1.0, 0.0]], shape=[3,11])
 
     real(8),dimension(3,2) :: cell_centers = reshape([[-0.5, 0.5, 0.5],[0.5, 0.5, 0.5]], shape=[3,2])
+    type(ugrid_struct_t) ugrid
 
-    call construct_flow_field(ncell, nvert, connectivity, offset, cell_types, verts, vv, CELL_TYPE_VTK, FACE_VERT_DEF_VTK)
+    ugrid%ncell = ncell
+    ugrid%nvert = nvert
+    ugrid%conns = connectivity
+    ugrid%offsets = offset
+    ugrid%cell_types = cell_types
+    ugrid%verts = verts
+    ugrid%cell_velocity = vv
+        
+    call construct_flow_field(ugrid, CELL_TYPE_VTK, FACE_VERT_DEF_VTK)
     
     if ( mv_flow_field%ncell /= 2 ) then
         error stop "ncell"
