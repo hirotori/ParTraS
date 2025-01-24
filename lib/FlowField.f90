@@ -91,6 +91,9 @@ subroutine update_members_(ugrid, field_only, verts_only)
             !geometry
             allocate(mv_flow_field%verts, source=ugrid%verts)
 
+            !COMMENT: if分岐増えたせいで, とっちらかってきた. でもこれ以上は複雑にならないはず...
+            ! 以下, ugridのメンバをコピーする形で構築. 割り付けられていない場合はこちらで構築. 
+
             if ( allocated(ugrid%cell2verts) ) then
                 allocate(mv_flow_field%cell2verts, source=ugrid%cell2verts)
             else
@@ -152,7 +155,7 @@ subroutine update_flow_field(ugrid, cell_type_def, face_vert_def, field_only, ve
     logical,intent(in) :: verts_only
 
 
-    !NOTE: メッシュがポリへドラルの場合, そもそもここが構築できない. その場合half_faceの構築はskipするしかない. 
+    !NOTE: メッシュがポリへドラルの場合, そもそもhalf_facesが構築できない. その場合half_faceの構築はskipするしかない. 
     !      したがって, ポリへドラルメッシュの場合面ーセル関係がugridで全て構築済みでなければならない. 
     if ( .not. field_only .and. .not. verts_only) call construct_half_faces(ugrid, cell_type_def, face_vert_def)
 
@@ -177,48 +180,48 @@ subroutine validate_flow_field()
     if ( mv_flow_field%ncell <= 0 ) error stop "flow_field/validate::ERROR:: ncell <= 0" 
     if ( mv_flow_field%nface <= 0 ) error stop "flow_field/validate::ERROR:: nface <= 0" 
 
-    if ( .not. validate_real_array_rank2(mv_flow_field%verts, [3, mv_flow_field%nvert])) then
+    if ( .not. validate_real_array(mv_flow_field%verts, [3, mv_flow_field%nvert])) then
         error stop "flow_field/validate::ERROR:: verts"
     endif
 
-    if ( .not. validate_real_array_rank2(mv_flow_field%face_centers, [3, mv_flow_field%nface])) then
+    if ( .not. validate_real_array(mv_flow_field%face_centers, [3, mv_flow_field%nface])) then
         error stop "flow_field/validate::ERROR:: face_centers"
     endif
 
-    if ( .not. validate_real_array_rank2(mv_flow_field%face_normals, [3, mv_flow_field%nface])) then
+    if ( .not. validate_real_array(mv_flow_field%face_normals, [3, mv_flow_field%nface])) then
         error stop "flow_field/validate::ERROR:: face_normals"
     endif
 
-    if ( .not. validate_int_array_rank2(mv_flow_field%face2cells, [2, mv_flow_field%nface]) ) then
+    if ( .not. validate_int_array(mv_flow_field%face2cells, [2, mv_flow_field%nface]) ) then
         error stop "flow_field/validate::ERROR:: face2cells"        
     end if
 
-    if ( .not. validate_int_array_rank2(mv_flow_field%face2verts, [FACE_VERT_SIZE, mv_flow_field%nface]) ) then
+    if ( .not. validate_int_array(mv_flow_field%face2verts, [FACE_VERT_SIZE, mv_flow_field%nface]) ) then
         error stop "flow_field/validate::ERROR:: face2verts"        
     end if
 
-    if ( .not. validate_real_array_rank2(mv_flow_field%cell_centers, [3, mv_flow_field%ncell])) then
+    if ( .not. validate_real_array(mv_flow_field%cell_centers, [3, mv_flow_field%ncell])) then
         error stop "flow_field/validate::ERROR:: cell_centers"
     endif
 
-    if ( .not. validate_int_array_rank2(mv_flow_field%cell2verts, [CELL_VERT_SIZE, mv_flow_field%ncell]) ) then
+    if ( .not. validate_int_array(mv_flow_field%cell2verts, [CELL_VERT_SIZE, mv_flow_field%ncell]) ) then
         error stop "flow_field/validate::ERROR:: cell2verts"        
     end if
 
     ncellface = mv_flow_field%cell_offsets(mv_flow_field%ncell+1)-1
-    if ( .not. validate_int_array_rank1(mv_flow_field%cell2faces, [ncellface]) ) then
+    if ( .not. validate_int_array(mv_flow_field%cell2faces, [ncellface]) ) then
         error stop "flow_field/validate::ERROR:: cell2faces"                
     end if
 
-    if ( .not. validate_int_array_rank1(mv_flow_field%cell_offsets, [mv_flow_field%ncell+1]) ) then
+    if ( .not. validate_int_array(mv_flow_field%cell_offsets, [mv_flow_field%ncell+1]) ) then
         error stop "flow_field/validate::ERROR:: cell_offsets"            
     end if
 
 end subroutine
 
-logical function validate_real_array_rank2(arr, arr_shape) result(valid)
-    real(DP),allocatable,intent(in) :: arr(:,:)
-    integer(IP),intent(in) :: arr_shape(2)
+logical function validate_real_array(arr, arr_shape) result(valid)
+    real(DP),allocatable,intent(in) :: arr(..)
+    integer(IP),intent(in) :: arr_shape(rank(arr))
 
     valid = .true.
     if ( .not. allocated(arr) ) then
@@ -231,24 +234,9 @@ logical function validate_real_array_rank2(arr, arr_shape) result(valid)
 
 end function
 
-logical function validate_int_array_rank2(arr, arr_shape) result(valid)
-    integer(IP),allocatable,intent(in) :: arr(:,:)
-    integer(IP),intent(in) :: arr_shape(2)
-
-    valid = .true.
-    if ( .not. allocated(arr) ) then
-        valid = .false.
-    else
-        if ( all(shape(arr) /= arr_shape) ) then
-            valid = .false.
-        end if
-    end if
-
-end function
-
-logical function validate_int_array_rank1(arr, arr_shape) result(valid)
-    integer(IP),allocatable,intent(in) :: arr(:)
-    integer(IP),intent(in) :: arr_shape(1)
+logical function validate_int_array(arr, arr_shape) result(valid)
+    integer(IP),allocatable,intent(in) :: arr(..)
+    integer(IP),intent(in) :: arr_shape(rank(arr))
 
     valid = .true.
     if ( .not. allocated(arr) ) then

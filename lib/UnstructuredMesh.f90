@@ -52,6 +52,7 @@ module unstructured_mesh_m
     end subroutine
 
     subroutine construct_half_faces_c2v(ncell, nvert, cell2verts, cell_types, cell_type_def, face_vert_def)
+        !! deprecated. 
         !! construct half-face array. result is stored in a module variable `half_faces`.
         integer,intent(in) :: ncell
             !! number of cell

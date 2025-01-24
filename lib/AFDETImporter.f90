@@ -79,6 +79,7 @@ subroutine read_backup_file(this, ugrid, shift_index)
     call read_arr_(unit_, ugrid%cell_velocity)
 
     ! create offsets and connectivities
+    ! cell2vertsから直にhal/faceを構築できればいいのだが, そうではないのでここで作成. 
     call create_conns_and_offsets_(ugrid%ncell, ugrid%cell2verts, ugrid%offsets, ugrid%conns)
 
     ! ゴーストセルは除外する. 
@@ -137,6 +138,7 @@ subroutine read_int_arr_(unit, arr)
 end subroutine
 
 subroutine create_conns_and_offsets_(ncell, cell2verts, offsets, conns)
+    !! cell2vertsからconnectivity と offsets を生成する. 
     integer,intent(in) :: ncell
     integer,intent(in) :: cell2verts(:,:)
     integer,allocatable,intent(inout) :: offsets(:)
