@@ -4,8 +4,8 @@ module init_m
     use kind_parameters_m
     use base_importer_m
     use vtk_importer_m
+    use afdet_importer_m
     use flow_field_m
-    use particle_data_m
     implicit none
     
 contains
@@ -44,5 +44,25 @@ end subroutine
 
 ! end subroutine
 
+
+subroutine init_field_afdet(c_filename) bind(c, name="init_field_afdet")
+    character(1, kind=c_char),dimension(*),intent(in) :: c_filename
+
+    character(:),allocatable :: filename
+    type(afdet_importer_t) importer_
+    type(ugrid_struct_t) ugrid_
+
+    filename = fstring(c_filename)
+    
+    call importer_%open_stream_on()
+    call importer_%open_ascii_off()
+    call importer_%open_file(filename)
+    call importer_%read_file(ugrid_, .false.)
+    call importer_%close()
+
+    call construct_flow_field(ugrid_, CELL_TYPE_DEF_AFDET, FACE_VERT_DEF_VTK)
+    call delete_ugrid(ugrid_)
+    
+end subroutine
 
 end module

@@ -38,11 +38,6 @@ module flow_field_m
     type(flow_field_t),protected :: mv_flow_field
         !! flow field object (module variable)
 
-    interface construct_flow_field
-        module procedure :: construct_flow_field_importer
-        module procedure :: construct_flow_field_arr
-    end interface
-
     public mv_flow_field, &
            construct_flow_field, &
            update_flow_field, &
@@ -53,7 +48,7 @@ module flow_field_m
 
 contains
 
-subroutine construct_flow_field_importer(ugrid, cell_type_def, face_vert_def)
+subroutine construct_flow_field(ugrid, cell_type_def, face_vert_def)
     type(ugrid_struct_t),intent(in) :: ugrid
         !! unstructured grid importer
     type(cell_type_t),intent(in) :: cell_type_def
@@ -67,49 +62,10 @@ subroutine construct_flow_field_importer(ugrid, cell_type_def, face_vert_def)
 
 end subroutine
 
-subroutine construct_flow_field_arr(ncell, nvert, connectivities, offsets, cell_types, verts, vel, cell_type_def, face_vert_def)
-    integer,intent(in) :: ncell
-        !! number of cell
-    integer,intent(in) :: nvert
-        !! number of vertices
-    integer,intent(in) :: connectivities(:)
-        !! cell connectivity array
-    integer,intent(in) :: offsets(:)
-        !! cell offset array
-    integer,intent(in) :: cell_types(ncell)
-        !! cell type array
-    real(DP),intent(in) :: verts(3,nvert)
-        !! vertex array
-    real(DP),intent(in) :: vel(3,ncell)
-        !! velocity array
-    type(cell_type_t),intent(in) :: cell_type_def
-        !! cell type definition
-    type(face_vertex_def_t),intent(in) :: face_vert_def
-        !! face-vertex connectivity definition
-
-    call construct_half_faces(ncell, nvert, connectivities, offsets, cell_types, cell_type_def, face_vert_def)
-
-    call update_members_(ncell, nvert, connectivities, offsets, verts, vel, .false., .false.)
-
-    call delete_half_faces()
-
-    mv_flow_field%is_assigned = .true.
-
-end subroutine
-
-subroutine update_members_(ncell, nvert, connectivities, offsets, verts, vel, field_only, verts_only)
-    integer,intent(in) :: ncell
-        !! number of cell
-    integer,intent(in) :: nvert
-        !! number of vertices
-    integer,intent(in) :: connectivities(:)
-        !! cell connectivity array
-    integer,intent(in) :: offsets(ncell+1)
-        !! cell offset array
-    real(DP),intent(in) :: verts(3,nvert)
-        !! vertex array
-    real(DP),intent(in) :: vel(3,ncell)
-        !! velocity
+subroutine update_members_(ugrid, field_only, verts_only)
+    !! update members of flow_field_t. 
+    type(ugrid_struct_t),intent(in) :: ugrid
+        !! grid object
     logical,intent(in) :: field_only
         !! whether it updates field vairable (cell velocity) only or not
     logical,intent(in) :: verts_only
@@ -121,10 +77,11 @@ subroutine update_members_(ncell, nvert, connectivities, offsets, verts, vel, fi
 
         if ( verts_only ) then
             ! 格子点だけ更新する場合. 
-            if ( size(verts, dim=2) /= size(mv_flow_field%verts, dim=2) ) then
+            if ( size(ugrid%verts, dim=2) /= size(mv_flow_field%verts, dim=2) ) then
                 error stop "flow_field_m/update_members_::ERROR::num of verts must be equal when updating verts only."
             end if
-            mv_flow_field%verts(:,:) = verts(:,:)
+            mv_flow_field%verts(:,:) = ugrid%verts(:,:)
+            return
         else
             ! 接続関係含めすべて. 
 
@@ -132,30 +89,64 @@ subroutine update_members_(ncell, nvert, connectivities, offsets, verts, vel, fi
             call delete_mesh_field()
             
             !geometry
-            allocate(mv_flow_field%verts, source=verts)
-            call create_cell_verts(ncell, connectivities, offsets, mv_flow_field%cell2verts)
-            call create_faces(mv_flow_field%face2cells, mv_flow_field%face2verts)
+            allocate(mv_flow_field%verts, source=ugrid%verts)
+
+            !COMMENT: if分岐増えたせいで, とっちらかってきた. でもこれ以上は複雑にならないはず...
+            ! 以下, ugridのメンバをコピーする形で構築. 割り付けられていない場合はこちらで構築. 
+
+            if ( allocated(ugrid%cell2verts) ) then
+                allocate(mv_flow_field%cell2verts, source=ugrid%cell2verts)
+            else
+                call create_cell_verts(ugrid%ncell, ugrid%conns, ugrid%offsets, mv_flow_field%cell2verts)
+            end if
+
+            ! 面-セル接続関係は両方が割り付けられている場合のみugridのデータを利用する. 
+            if ( allocated(ugrid%face2cells) .and. allocated(ugrid%face2verts) ) then
+                allocate(mv_flow_field%face2cells, source=ugrid%face2cells)
+                allocate(mv_flow_field%face2verts, source=ugrid%face2verts)
+            else
+                call create_faces(mv_flow_field%face2cells, mv_flow_field%face2verts)
+            end if
+
             call create_boundary_faces(mv_flow_field%face2cells, mv_flow_field%boundary_faces)
-            call create_cell_faces(ncell, mv_flow_field%face2cells, mv_flow_field%cell2faces, mv_flow_field%cell_offsets)
+            call create_cell_faces(ugrid%ncell, mv_flow_field%face2cells, mv_flow_field%cell2faces, mv_flow_field%cell_offsets)
             
-            mv_flow_field%ncell = ncell
-            mv_flow_field%nvert = nvert
+            mv_flow_field%ncell = ugrid%ncell
+            mv_flow_field%nvert = ugrid%nvert
             mv_flow_field%nface = size(mv_flow_field%face2cells, dim=2)
             
-            allocate(mv_flow_field%cell_centers(3,mv_flow_field%ncell))
-            call compute_cell_centers(mv_flow_field%cell2verts, mv_flow_field%verts, mv_flow_field%cell_centers)
-            allocate(mv_flow_field%face_centers(3,mv_flow_field%nface))
-            allocate(mv_flow_field%face_normals(3,mv_flow_field%nface))
-            call compute_face_centers_and_normals(mv_flow_field%face2verts, mv_flow_field%verts, mv_flow_field%face_centers, mv_flow_field%face_normals)
+            if ( allocated(ugrid%cell_centers) ) then
+                allocate(mv_flow_field%cell_centers, source=ugrid%cell_centers)
+            else
+                allocate(mv_flow_field%cell_centers(3,mv_flow_field%ncell))
+                call compute_cell_centers(mv_flow_field%cell2verts, mv_flow_field%verts, mv_flow_field%cell_centers)
+            end if
+
+            if ( allocated(ugrid%face_centers) .and. allocated(ugrid%face_normals) ) then
+                allocate(mv_flow_field%face_centers, source=ugrid%face_centers)
+                allocate(mv_flow_field%face_normals, source=ugrid%face_normals)                
+            else
+                allocate(mv_flow_field%face_centers(3,mv_flow_field%nface))
+                allocate(mv_flow_field%face_normals(3,mv_flow_field%nface))
+                call compute_face_centers_and_normals(mv_flow_field%face2verts, mv_flow_field%verts, mv_flow_field%face_centers, mv_flow_field%face_normals)
+            end if
             
         end if
 
         !field variable
-        allocate(mv_flow_field%velocity, source=vel)
+        allocate(mv_flow_field%velocity, source=ugrid%cell_velocity)
 
     else 
+        ! トポロジー変化しないと仮定しているので, 変わっていた場合NG. 
+        if ( ugrid%ncell /= mv_flow_field%ncell ) then
+            error stop "flow_field_m/update_members_::ERROR:: Improper `ncell` changes under option `fields_only`"
+        end if
+        if ( ugrid%nvert /= mv_flow_field%nvert ) then
+            error stop "flow_field_m/update_members_::ERROR:: Improper `nvert` changes under option `fields_only`"
+        end if
+
         ! すでに割り付け済みと仮定する. 
-        mv_flow_field%velocity(:,:) = vel(:,:)
+        mv_flow_field%velocity(:,:) = ugrid%cell_velocity(:,:)
     endif
 
 end subroutine
@@ -172,20 +163,99 @@ subroutine update_flow_field(ugrid, cell_type_def, face_vert_def, field_only, ve
     logical,intent(in) :: verts_only
 
 
+    !NOTE: メッシュがポリへドラルの場合, そもそもhalf_facesが構築できない. その場合half_faceの構築はskipするしかない. 
+    !      したがって, ポリへドラルメッシュの場合面ーセル関係がugridで全て構築済みでなければならない. 
     if ( .not. field_only .and. .not. verts_only) call construct_half_faces(ugrid, cell_type_def, face_vert_def)
 
-    call update_members_(ugrid%ncell, ugrid%nvert, ugrid%conns, ugrid%offsets, ugrid%verts, ugrid%cell_velocity, field_only, verts_only)
+    call update_members_(ugrid, field_only, verts_only)
+
+    call validate_flow_field()
 
     ! delete current data of half faces
     call delete_half_faces()
-
-    ! mesh_field%filename = ugrid%filename
-
+    
     mv_flow_field%is_assigned = .true.
 
     call print_field()
 
 end subroutine
+
+subroutine validate_flow_field()
+    !! test if all members are allocated and have valid shapes
+    integer ncellface
+
+    if ( mv_flow_field%nvert <= 0 ) error stop "flow_field/validate::ERROR:: nvert <= 0" 
+    if ( mv_flow_field%ncell <= 0 ) error stop "flow_field/validate::ERROR:: ncell <= 0" 
+    if ( mv_flow_field%nface <= 0 ) error stop "flow_field/validate::ERROR:: nface <= 0" 
+
+    if ( .not. validate_real_array(mv_flow_field%verts, [3, mv_flow_field%nvert])) then
+        error stop "flow_field/validate::ERROR:: verts"
+    endif
+
+    if ( .not. validate_real_array(mv_flow_field%face_centers, [3, mv_flow_field%nface])) then
+        error stop "flow_field/validate::ERROR:: face_centers"
+    endif
+
+    if ( .not. validate_real_array(mv_flow_field%face_normals, [3, mv_flow_field%nface])) then
+        error stop "flow_field/validate::ERROR:: face_normals"
+    endif
+
+    if ( .not. validate_int_array(mv_flow_field%face2cells, [2, mv_flow_field%nface]) ) then
+        error stop "flow_field/validate::ERROR:: face2cells"        
+    end if
+
+    if ( .not. validate_int_array(mv_flow_field%face2verts, [FACE_VERT_SIZE, mv_flow_field%nface]) ) then
+        error stop "flow_field/validate::ERROR:: face2verts"        
+    end if
+
+    if ( .not. validate_real_array(mv_flow_field%cell_centers, [3, mv_flow_field%ncell])) then
+        error stop "flow_field/validate::ERROR:: cell_centers"
+    endif
+
+    if ( .not. validate_int_array(mv_flow_field%cell2verts, [CELL_VERT_SIZE, mv_flow_field%ncell]) ) then
+        error stop "flow_field/validate::ERROR:: cell2verts"        
+    end if
+
+    ncellface = mv_flow_field%cell_offsets(mv_flow_field%ncell+1)-1
+    if ( .not. validate_int_array(mv_flow_field%cell2faces, [ncellface]) ) then
+        error stop "flow_field/validate::ERROR:: cell2faces"                
+    end if
+
+    if ( .not. validate_int_array(mv_flow_field%cell_offsets, [mv_flow_field%ncell+1]) ) then
+        error stop "flow_field/validate::ERROR:: cell_offsets"            
+    end if
+
+end subroutine
+
+logical function validate_real_array(arr, arr_shape) result(valid)
+    real(DP),allocatable,intent(in) :: arr(..)
+    integer(IP),intent(in) :: arr_shape(rank(arr))
+
+    valid = .true.
+    if ( .not. allocated(arr) ) then
+        valid = .false.
+    else
+        if ( all(shape(arr) /= arr_shape) ) then
+            valid = .false.
+        end if
+    end if
+
+end function
+
+logical function validate_int_array(arr, arr_shape) result(valid)
+    integer(IP),allocatable,intent(in) :: arr(..)
+    integer(IP),intent(in) :: arr_shape(rank(arr))
+
+    valid = .true.
+    if ( .not. allocated(arr) ) then
+        valid = .false.
+    else
+        if ( all(shape(arr) /= arr_shape) ) then
+            valid = .false.
+        end if
+    end if
+
+end function
 
 subroutine print_field()
 
