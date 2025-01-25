@@ -28,7 +28,7 @@ def droplet(dt:float, L_ref:float, U_ref:float, rho_f:float, mu_f:float, rho_p:f
                                  ctypes.byref(ctypes.c_double(mu_f)),
                                  ctypes.byref(ctypes.c_double(rho_p)),
                                  ctypes.byref(ctypes.c_int(RK_order)),
-                                 np.array(gravity))
+                                 np.array(gravity, dtype=np.float64))
 
 
     
