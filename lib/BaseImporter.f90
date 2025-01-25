@@ -42,6 +42,18 @@ module base_importer_m
         integer(IP),allocatable :: cell_types(:)
         real(DP),allocatable :: cell_velocity(:,:)
 
+        ! CFDデータのサポート. 
+        ! 特定のCFDデータは面ーセル接続関係をファイルに書き込む場合がある. 
+        ! それらのデータを読み, 直接`flow_field_t`に渡せるようにメンバを追加. 
+        ! ファイルにこれらのデータがない場合は割り付けてはならない.
+        ! `flow_field_t`はこれらが割り付けられていない場合自分で構築する.  
+        integer(IP),allocatable :: face2cells(:,:)
+        integer(IP),allocatable :: face2verts(:,:)
+
+        !幾何量
+        real(DP),allocatable :: cell_centers(:,:)
+        real(DP),allocatable :: face_centers(:,:)
+        real(DP),allocatable :: face_normals(:,:)
     end type
 
     type,abstract:: ugrid_importer_t
@@ -80,6 +92,10 @@ subroutine delete_ugrid(this)
     if (allocated(this%cell_velocity))deallocate(this%cell_velocity)
 
     ! this%filename = FILENAME_NOT_ASSIGNED
+    if ( allocated(this%face2cells) ) deallocate(this%face2cells) 
+    if ( allocated(this%face2verts) ) deallocate(this%face2verts) 
+    if ( allocated(this%face_centers) ) deallocate(this%face_centers) 
+    if ( allocated(this%cell_centers) ) deallocate(this%cell_centers) 
 end subroutine
 
 ! ~~~~~~~~~~~~~~~~~ importer ~~~~~~~~~~~~~~~~~~~~ !

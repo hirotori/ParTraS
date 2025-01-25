@@ -35,6 +35,7 @@ ADDTEST(umesh_vtk)
 ADDTEST(mesh_field)
 ADDTEST(mesh_field_vtk)
 ADDTEST(vtk_importer)
+ADDTEST(afdet_importer)
 ADDTEST(refcell_search)
 ADDTEST(field_updater)
 

@@ -3,7 +3,7 @@ module version_m
     implicit none
     integer,parameter,private :: MAJOR_VERSION = 0
     integer,parameter,private :: MINOR_VERSION = 1
-    integer,parameter,private :: PATCH_VERSION = 1
+    integer,parameter,private :: PATCH_VERSION = 2
 
     public :: get_version
 

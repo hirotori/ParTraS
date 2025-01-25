@@ -9,12 +9,14 @@ _pypts._pypts_flib.assign_droplet_motion.argtypes = [
                                          ctypes.POINTER(ctypes.c_double),
                                          ctypes.POINTER(ctypes.c_double),
                                          ctypes.POINTER(ctypes.c_double),
-                                         ctypes.POINTER(ctypes.c_int)]
+                                         ctypes.POINTER(ctypes.c_int),
+                                         np.ctypeslib.ndpointer(dtype=np.float64)]
 _pypts._pypts_flib.assign_droplet_motion.restype = None
 
 
 
-def droplet(dt:float, L_ref:float, U_ref:float, rho_f:float, mu_f:float, rho_p:float, RK_order:int) -> None:
+def droplet(dt:float, L_ref:float, U_ref:float, rho_f:float, mu_f:float, rho_p:float, RK_order:int,
+            gravity:list=[0.0, 0.0, -9.806]) -> None:
     """
     droplet motion. 
     """
@@ -25,7 +27,8 @@ def droplet(dt:float, L_ref:float, U_ref:float, rho_f:float, mu_f:float, rho_p:f
                                  ctypes.byref(ctypes.c_double(rho_f)),
                                  ctypes.byref(ctypes.c_double(mu_f)),
                                  ctypes.byref(ctypes.c_double(rho_p)),
-                                 ctypes.byref(ctypes.c_int(RK_order)))
+                                 ctypes.byref(ctypes.c_int(RK_order)),
+                                 np.array(gravity, dtype=np.float64))
 
 
     

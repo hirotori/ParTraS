@@ -30,7 +30,8 @@ module unstructured_mesh_m
            create_boundary_faces, &
            create_cell_faces, &
            create_cell_verts, &
-           delete_half_faces
+           delete_half_faces, &
+           CELL_VERT_SIZE, FACE_VERT_SIZE
 
     contains
 
@@ -51,6 +52,7 @@ module unstructured_mesh_m
     end subroutine
 
     subroutine construct_half_faces_c2v(ncell, nvert, cell2verts, cell_types, cell_type_def, face_vert_def)
+        !! deprecated. 
         !! construct half-face array. result is stored in a module variable `half_faces`.
         integer,intent(in) :: ncell
             !! number of cell
