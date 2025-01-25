@@ -14,8 +14,6 @@ module droplet_motion_m
 
         real(DP),private :: coeff_f
 
-        real(DP),private :: g_(3) = [real(DP):: 0.0, 0.0, -9.81]
-
         contains
         procedure construct_droplet_motion
         procedure :: integrate_one_step 
@@ -27,7 +25,7 @@ module droplet_motion_m
 
 contains
     
-subroutine construct_droplet_motion(this, dt, L_ref, U_ref, rho_f, mu_f, rho_p, RK_order)
+subroutine construct_droplet_motion(this, dt, L_ref, U_ref, rho_f, mu_f, rho_p, RK_order, gravity)
     !! construct an object describing the motion of droplets.
     !! equations of motions are non-dimensionalized by four characteristic variables:
     !! length, velocity, density, and viscosity.
@@ -48,12 +46,23 @@ subroutine construct_droplet_motion(this, dt, L_ref, U_ref, rho_f, mu_f, rho_p, 
         !! density of particle
     integer,intent(in) :: RK_order
         !! the order of Runge-Kutta scheme
+    real(DP),intent(in),optional :: gravity(3)
+        !! gravity force [m/s2]
+
+    real(DP) :: g_(3) = [real(DP):: 0.0, 0.0, -9.81]
+        ! default gravity force
+
 
     this%coeff_f = 3./8.*(rho_f/rho_p)
     call this%construct_motion(dt, L_ref, U_ref, rho_f, mu_f)
     this%n_rk = RK_order
-    this%g_ = this%g_/(U_ref*U_ref/L_ref)
-    print*, this%g_, this%get_Re_ref()
+
+    if ( present(gravity) ) then
+        call this%set_body_force(gravity)
+    else
+        call this%set_body_force(g_)
+    end if
+
 end subroutine
 
 pure subroutine integrate_one_step(this, part)
@@ -119,7 +128,7 @@ pure subroutine compute_force_droplet(this, v, u, rad, f)
     dv = u - v
     dv_norm = sqrt(sum(dv*dv))
     Re_p_ = dv_norm*2*rad*this%get_Re_ref()
-    f(:) = this%coeff_f*Cd(Re_p_)/rad*dv_norm*dv + this%g_
+    f(:) = this%coeff_f*Cd(Re_p_)/rad*dv_norm*dv + this%get_body_force()
 
 end subroutine
 
