@@ -2,6 +2,7 @@ import os
 import ctypes
 from numpy import ctypeslib
 import numpy as np
+import platform
 
 from logging import getLogger, StreamHandler, INFO, Formatter
 logger = getLogger("PyPTS")
@@ -13,5 +14,15 @@ hdlr.setLevel(INFO)
 logger.addHandler(hdlr)
 
 _libpath = os.path.dirname(os.path.abspath(__file__))
-_pypts_flib = ctypeslib.load_library("libpypts.dylib", _libpath)
+
+_os = platform.system()
+
+if _os == "Darwin":
+    _libname = "libpypts.dylib"
+elif _os == "Linux":
+    _libname = "libpypts.so"
+elif _os == "Windows":
+    _libname = "libpypts.dll"
+
+_pypts_flib = ctypeslib.load_library(_libname, _libpath)
 
