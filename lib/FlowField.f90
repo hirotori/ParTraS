@@ -137,6 +137,14 @@ subroutine update_members_(ugrid, field_only, verts_only)
         allocate(mv_flow_field%velocity, source=ugrid%cell_velocity)
 
     else 
+        ! トポロジー変化しないと仮定しているので, 変わっていた場合NG. 
+        if ( ugrid%ncell /= mv_flow_field%ncell ) then
+            error stop "flow_field_m/update_members_::ERROR:: Improper `ncell` changes under option `fields_only`"
+        end if
+        if ( ugrid%nvert /= mv_flow_field%nvert ) then
+            error stop "flow_field_m/update_members_::ERROR:: Improper `nvert` changes under option `fields_only`"
+        end if
+
         ! すでに割り付け済みと仮定する. 
         mv_flow_field%velocity(:,:) = ugrid%cell_velocity(:,:)
     endif
