@@ -205,8 +205,8 @@ subroutine run(this, nstart, nend)
         call search_reference_cell(mv_pdata%particles(i)%pos, mv_pdata%particles(i)%pos, &
                                    mv_pdata%particles(i)%ref_cell, 100)
         ! assume that other particles are near from 1 
-        if ( mv_pdata%particles(1)%ref_cell == REFCELL_OUTBOUNDS ) then
-            error stop "??"
+        if ( mv_pdata%particles(1)%ref_cell <= REFCELL_OUTBOUNDS ) then
+            error stop "simulator_m/simulator_t%run::ERROR:: proper reference cell not found. The particle '1' may be out of field."
         end if
         mv_pdata%particles(2:)%ref_cell = mv_pdata%particles(1)%ref_cell
         do i = 2, mv_pdata%N_part
