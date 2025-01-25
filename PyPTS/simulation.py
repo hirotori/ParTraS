@@ -1,6 +1,7 @@
 import numpy as np
 import ctypes
 from . import _pypts
+import signal
 
 # init
 _pypts._pypts_flib.initialize_simulation.argtypes = [ctypes.POINTER(ctypes.c_int),
@@ -48,6 +49,7 @@ def initialize(nwrite:int, write_ascii:bool, traj_path:str,
                                              )
     
 def run(nstart:int, nend:int):
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
     _pypts._pypts_flib.run_simulation(ctypes.byref(ctypes.c_int(nstart)),
                                       ctypes.byref(ctypes.c_int(nend)),
                                      )
