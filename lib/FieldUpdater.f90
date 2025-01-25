@@ -135,7 +135,7 @@ subroutine update_field(this, ncyc)
     if ( this%should_update_field(ncyc) ) then
 
         fname_ = get_filename(this%basename_, this%counter_*this%interval_, this%pad_, this%ext_)
-        print "('field_updater_t/update_field::notice:: flow field is updated by ""',A, '""')", fname_
+        print "('field_updater_t/update_field::notice:: flow field is updated by ""',A, '""')", trim(adjustl(fname_))
 
         call this%importer_%open_file(trim(fname_))
 
@@ -175,6 +175,8 @@ logical function should_update_field(this, ncyc)
     integer,intent(in) :: ncyc
         !! current cycle in a particle simulation
 
+    should_update_field = .false.
+
     if ( this%interval_ == NO_UPDATE ) then
         should_update_field = .false.
         return
@@ -183,6 +185,7 @@ logical function should_update_field(this, ncyc)
     !NOTE: dt_part > dt_flow となるケースは想定していないため, 永遠に更新されない. 
     !NOTE: dt_part/dt_flowが割り切れない場合, 現在の時刻 nw*dt_part に最も近い時刻の流れ場で更新される. 
     !NOTE: 例えば dt_part = 0.03, dt_flow = 0.1である場合, ncyc=4で更新される. 
+    !TODO: 丸めモードの検討. 上の例だとncyc=4だが, ncyc=3でも妥当(dt_p/dt_f*ncyc=0.9 ~ 1. t_p=0.09 ~ t_f=0.1)
     if ( this%counter_ == int(this%dt_part_*ncyc/this%dt_flow_)) then
         should_update_field = .true.
     end if

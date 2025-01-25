@@ -85,7 +85,7 @@ class vtkUpdater:
         _pypts._pypts_flib.update_field_vtk(ctypes.byref(ctypes.c_double(self.dt_f)),
                                             ctypes.byref(ctypes.c_double(self.dt_p)),
                                             self.basename.encode(),
-                                            ctypes.byref(ctypes.c_double(self.ndigit)),
+                                            ctypes.byref(ctypes.c_int(self.ndigit)),
                                             ctypes.byref(ctypes.c_bool(self.field_only)),
                                             ctypes.byref(ctypes.c_bool(self.verts_only)),
                                             ctypes.byref(ctypes.c_int(self.interval)),
