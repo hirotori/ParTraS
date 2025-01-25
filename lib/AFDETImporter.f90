@@ -11,8 +11,9 @@ module afdet_importer_m
 
     interface read_arr_
         !! interface for read chunk data
-        module procedure read_int_arr_
-        module procedure read_real_arr_
+        module procedure read_int_arr_r1
+        module procedure read_int_arr_r2    
+        module procedure read_real_arr_r2
     end interface
 
     type(cell_type_t),parameter :: CELL_TYPE_DEF_AFDET = cell_type_t(1, 3, 4, 2)
@@ -89,10 +90,10 @@ subroutine read_backup_file(this, ugrid, shift_index)
 end subroutine
 
 ! helper
-subroutine read_real_arr_(unit, arr)
+subroutine read_real_arr_r2(unit, arr)
     !! read data chunk.
     integer,intent(in) :: unit
-    real(DP),allocatable :: arr(..)
+    real(DP),allocatable :: arr(:,:)
 
     integer lower_(rank(arr))
     integer upper_(rank(arr))
@@ -100,23 +101,15 @@ subroutine read_real_arr_(unit, arr)
     read(unit) lower_ !; print*, lower_
     read(unit) upper_ !; print*, upper_
 
-    select rank (arr)
-    rank(1)
-        allocate(arr(lower_(1):upper_(1)))
-        read(unit) arr
-    rank(2)
-        allocate(arr(lower_(1):upper_(1), lower_(2):upper_(2)))
-        read(unit) arr
-    rank default
-        error stop "afdet_importer/read_arr_(real)::ERROR:: unsupported rank"
-    end select
+    allocate(arr(lower_(1):upper_(1), lower_(2):upper_(2)))
+    read(unit) arr
 
 end subroutine
 
-subroutine read_int_arr_(unit, arr)
+subroutine read_int_arr_r1(unit, arr)
     !! read data chunk.
     integer,intent(in) :: unit
-    integer(IP),allocatable :: arr(..)
+    integer(IP),allocatable :: arr(:)
 
     integer lower_(rank(arr))
     integer upper_(rank(arr))
@@ -124,16 +117,24 @@ subroutine read_int_arr_(unit, arr)
     read(unit) lower_ !; print*, lower_
     read(unit) upper_ !; print*, upper_
 
-    select rank (arr)
-    rank(1)
-        allocate(arr(lower_(1):upper_(1)))
-        read(unit) arr
-    rank(2)
-        allocate(arr(lower_(1):upper_(1), lower_(2):upper_(2)))
-        read(unit) arr
-    rank default
-        error stop "afdet_importer/read_arr_(int)::ERROR:: unsupported rank"
-    end select
+    allocate(arr(lower_(1):upper_(1)))
+    read(unit) arr
+
+end subroutine
+
+subroutine read_int_arr_r2(unit, arr)
+    !! read data chunk.
+    integer,intent(in) :: unit
+    integer(IP),allocatable :: arr(:,:)
+
+    integer lower_(rank(arr))
+    integer upper_(rank(arr))
+
+    read(unit) lower_ !; print*, lower_
+    read(unit) upper_ !; print*, upper_
+
+    allocate(arr(lower_(1):upper_(1), lower_(2):upper_(2)))
+    read(unit) arr
 
 end subroutine
 
