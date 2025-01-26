@@ -1,7 +1,7 @@
 FC = gfortran
 TARGET = main
 SRC = main.f90
-FFLAGS := -O0 -fopenmp -fbacktrace -fcheck=all
+FFLAGS := -O0 -fbacktrace -fcheck=all
 
 #モジュールファイルの出力場所
 MODDIR = ./mod

@@ -58,16 +58,19 @@ program main
     end block
 
     block
+        real(8),parameter :: L = 1.0d0
+        real(8),parameter :: U = 1.0d0
+        real(8),parameter :: RHO = 1.0d0
+        real(8),parameter :: MU = 1d-5
+        real(8),parameter :: Re = RHO*U*L/MU
+        
         integer,parameter :: n_rk = 4
-        real(8),parameter :: rho_p = 1000.d0
-        real(8),parameter :: mu_p  = 1d-3
-        real(8),parameter :: rho_f = 1.d0
-        real(8),parameter :: mu_f  = 1d-5
-        real(8),parameter :: dt = 0.001
-        real(8),parameter :: Lref = 1.0d0
-        real(8),parameter :: Uref = 1.0d0
+        real(8),parameter :: rho_p = 1000.d0/RHO
+        real(8),parameter :: rho_f = 1.d0/RHO
+        real(8),parameter :: dt = 0.001/(L/U)
+        real(8),parameter :: g(3) = [0.0, 0.0, -9.81]/(U*U/L)
 
-        call motion%construct_droplet_motion(dt, Lref, Uref, rho_f, mu_f, rho_p, n_rk)
+        call motion%construct_droplet_motion(dt, Re, rho_f, rho_p, n_rk, g)
     end block
 
     call mv_field_updater%disable_updater()

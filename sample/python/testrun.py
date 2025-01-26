@@ -24,14 +24,17 @@ field.init_field_vtk("../sax_flow/sax_flow.vtk", True)
 
 
 # motion
-n_rk = 4
-rho_p = 1000.0
-mu_p  = 0.001
-rho_f = 1.0
-mu_f  = 1e-5
-dt = 0.0001
 L = U = 1.0
-motions.droplet(dt, L, U, rho_f, mu_f, rho_p, n_rk)
+RHO = 1.0
+n_rk = 4
+rho_p = 1000.0/RHO
+rho_f = 1.0/RHO
+MU  = 1e-5
+Re = RHO*U*L/MU
+dt = 0.0001/(L/U)
+g = np.array([0,0,-9.81])
+g /= (U*U/L)
+motions.droplet(dt, Re, rho_f, rho_p, n_rk, g)
 
 # updater is disabled (i.e. steady flow)
 update.no_update()
