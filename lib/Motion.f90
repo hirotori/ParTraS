@@ -5,23 +5,17 @@ module motion_m
     
     type,abstract:: motion_t
         real(DP),private :: dt_
-        real(DP),private :: L_ref
-        real(DP),private :: U_ref
-        real(DP),private :: Rho_ref
-        real(DP),private :: Mu_ref
+            !! time stepping size [T]
         real(DP),private :: Re_ref
+            !! Reynolds number
         real(DP),dimension(3),private :: body_force_ = 0.d0
             !! body force (per mass) exerted on a particle.
+            !! unit is [LT^-2]
     
         contains
         procedure construct_motion
-        procedure,non_overridable :: set_body_force
         procedure,non_overridable :: get_body_force
         procedure,non_overridable :: get_dt
-        procedure,non_overridable :: get_L_ref
-        procedure,non_overridable :: get_U_ref
-        procedure,non_overridable :: get_Rho_ref
-        procedure,non_overridable :: get_Mu_ref
         procedure,non_overridable :: get_Re_ref
         procedure,non_overridable :: proceed_time_step
         procedure(integrate_one_step_impl),deferred :: integrate_one_step
@@ -31,50 +25,23 @@ module motion_m
 
 contains
 
-subroutine construct_motion(this, dt, L_ref, U_ref, Rho_ref, Mu_ref, body_force)
+subroutine construct_motion(this, dt, Re, body_force)
     !! construct motion object.
-    !! equations of motions are non-dimensionalized by four characteristic variables:
-    !! length, velocity, density, and viscosity.
-    !! We assume density and viscosity of fluid to be reference density and viscosity, respectively.
+
     class(motion_t),intent(inout) :: this
     real(DP),intent(in) :: dt
-        !! time stepping size [s]
-    real(DP),intent(in) :: L_ref
-        !! reference length [m]
-    real(DP),intent(in) :: U_ref
-        !! reference velocity [m/s]
-    real(DP),intent(in) :: Rho_ref
-        !! reference density [kg/m3]
-    real(DP),intent(in) :: Mu_ref
-        !! reference viscosity [Pa*s]
-    real(DP),dimension(3),intent(in),optional :: body_force
+        !! time stepping size [L/U]
+    real(DP),intent(in) :: Re
+        !! Reynolds number
+    real(DP),dimension(3),intent(in) :: body_force
+        !! body force (per mass) exerted on a particle. The unit is [U^2/L]
 
-
-    this%dt_ = dt/(L_ref/U_ref)
-    this%L_ref = L_ref
-    this%U_ref = U_ref
-    this%Rho_ref = Rho_ref
-    this%Re_ref = Rho_ref*U_ref*L_ref/Mu_ref
-
-    if ( present(body_force) ) then
-        call this%set_body_force(body_force)
-    else
-        call this%set_body_force([real(DP):: 0, 0, 0])
-    end if
+    this%dt_ = dt
+    this%Re_ref = Re
+    this%body_force_ = body_force
 
 end subroutine
 
-subroutine set_body_force(this, bf)
-    !! set body force.
-    !! input values are non-dimensionalized.
-    !! @NOTE: reference values U_ref and L_ref must be initialized before calling this.
-    class(motion_t),intent(inout) :: this
-    real(DP),dimension(3),intent(in) :: bf
-        !! body force [m/s2]
-
-    this%body_force_ = bf/(this%U_ref*this%U_ref/this%L_ref)
-
-end subroutine
 
 pure function get_body_force(this) result(bf)
     !! body force (per mass) exerted on a particle
@@ -89,38 +56,6 @@ pure real(DP) function get_dt(this) result(dt)
     class(motion_t),intent(in) :: this
 
     dt = this%dt_
-
-end function
-
-pure real(DP) function get_L_ref(this) result(L_ref)
-    !! reference length
-    class(motion_t),intent(in) :: this
-
-    L_ref = this%L_ref
-
-end function
-
-pure real(DP) function get_U_ref(this) result(U_ref)
-    !! reference velocity
-    class(motion_t),intent(in) :: this
-
-    U_ref = this%U_ref
-
-end function
-
-pure real(DP) function get_Rho_ref(this) result(Rho_ref)
-    !! reference density
-    class(motion_t),intent(in) :: this
-
-    rho_ref = this%Rho_ref
-
-end function
-
-pure real(DP) function get_Mu_ref(this) result(mu_ref)
-    !! reference viscosity
-    class(motion_t),intent(in) :: this
-
-    Mu_ref = this%Mu_ref
 
 end function
 

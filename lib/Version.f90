@@ -2,8 +2,8 @@ module version_m
     !! treat version of this project
     implicit none
     integer,parameter,private :: MAJOR_VERSION = 0
-    integer,parameter,private :: MINOR_VERSION = 1
-    integer,parameter,private :: PATCH_VERSION = 2
+    integer,parameter,private :: MINOR_VERSION = 2
+    integer,parameter,private :: PATCH_VERSION = 0
 
     public :: get_version
 

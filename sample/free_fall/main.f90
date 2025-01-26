@@ -8,13 +8,19 @@ program main
     implicit none
 
     integer i, n
-    real(8) :: zmax, dt
+    real(8) :: zmax
+    real(8),parameter :: L = 1.0d0
+    real(8),parameter :: U = 1.0d0
+    real(8),parameter :: RHO = 1.0d0
+    real(8),parameter :: MU = 1d-5
+    real(8),parameter :: Re = RHO*U*L/MU
+    
     integer,parameter :: n_rk = 4
-    real(8),parameter :: rad_p = 1d-5
-    real(8),parameter :: rho_p = 1000.d0
-    real(8),parameter :: mu_p  = 1d-3
-    real(8),parameter :: rho_f = 1.d0
-    real(8),parameter :: mu_f  = 1d-5
+    real(8),parameter :: rho_p = 1000.d0/RHO
+    real(8),parameter :: rho_f = 1.d0/RHO
+    real(8),parameter :: dt = 0.001/(L/U)
+    real(8),parameter :: g(3) = [0.0, 0.0, -9.81]/(U*U/L)
+
     type(vtk_importer_t) vtk_importer
     type(ugrid_struct_t) vtk_ugrid
     type(droplet_motion_t) motion
@@ -37,7 +43,7 @@ program main
         mv_pdata%particles(i)%pos = [0.4d0, 0.5d0, zmax]
         mv_pdata%particles(i)%vel = 0.d0
         mv_pdata%particles(i)%state = PARTICLE_ACTIVATE
-        mv_pdata%particles(i)%radius = rad_p
+        mv_pdata%particles(i)%radius = 1d-5
         mv_pdata%particles(i)%ref_cell = 1
 
         call search_reference_cell(mv_pdata%particles(i)%pos, mv_pdata%particles(i)%pos, mv_pdata%particles(i)%ref_cell, 100)
@@ -47,8 +53,7 @@ program main
 
     end do
 
-    dt = 0.001d0
-    call motion%construct_droplet_motion(dt, 1.d0, 1.d0, rho_f, mu_f, rho_p, n_rk)
+    call motion%construct_droplet_motion(dt, Re, rho_f, rho_p, n_rk, g)
     ! Heun法 (2次ルンゲ・クッタ法) で離散化している.
     ! dt = 0.01とすると粒子が上に移動する. 力が+-振動し, 振幅が大きくなっていく. 
     ! dt = 0.001とすると計算はできた. 
@@ -76,7 +81,7 @@ program main
 
         dv = u - v
         dv_norm = sqrt(sum(dv*dv))
-        Re_p_ = rho_f*dv_norm*2*radi/mu_f
+        Re_p_ = rho_f*dv_norm*2*radi/MU
         f(:) = 3.0/8.0*rho_f*Cd(Re_p_)/(rho_p*radi)*dv_norm*dv
         f(3) = f(3) - 9.81d0
 
