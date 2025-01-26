@@ -7,19 +7,17 @@ module motions_m
     
 contains
 
-subroutine assign_droplet_motion(dt, L_ref, U_ref, rho_f, mu_f, rho_p, RK_order, body_force) bind(c, name="assign_droplet_motion")
+subroutine assign_droplet_motion(dt, Re, rho_f, rho_p, RK_order, body_force) bind(c, name="assign_droplet_motion")
     real(c_double),intent(in) :: dt
-    real(c_double),intent(in) :: L_ref
-    real(c_double),intent(in) :: U_ref
+    real(c_double),intent(in) :: Re
     real(c_double),intent(in) :: rho_f
-    real(c_double),intent(in) :: mu_f
     real(c_double),intent(in) :: rho_p
     integer(c_int),intent(in) :: RK_order
     real(c_double),intent(in) :: body_force(3)
 
     type(droplet_motion_t) motion_
 
-    call motion_%construct_droplet_motion(dt, L_ref, U_ref, rho_f, mu_f, rho_p, RK_order, body_force)
+    call motion_%construct_droplet_motion(dt, Re, rho_f, rho_p, RK_order, body_force)
 
     call mv_simulator%set_motion(motion_)
 

@@ -7,8 +7,6 @@ module droplet_motion_m
     private
 
     type,extends(motion_t) :: droplet_motion_t
-        real(DP),private :: rho_p
-            !! density of particle
         integer,private :: n_rk
             !! number of steps in Runge-Kutta
 
@@ -19,51 +17,43 @@ module droplet_motion_m
         procedure :: integrate_one_step 
         procedure update_status
         procedure :: compute_force => compute_force_droplet
+        procedure,non_overridable :: get_RK_order
     end type
     
     public droplet_motion_t
 
 contains
     
-subroutine construct_droplet_motion(this, dt, L_ref, U_ref, rho_f, mu_f, rho_p, RK_order, gravity)
+subroutine construct_droplet_motion(this, dt, Re, rho_f, rho_p, RK_order, gravity)
     !! construct an object describing the motion of droplets.
-    !! equations of motions are non-dimensionalized by four characteristic variables:
-    !! length, velocity, density, and viscosity.
-    !! We assume density and viscosity of fluid to be reference density and viscosity, respectively.
 
     class(droplet_motion_t),intent(inout) :: this
     real(DP),intent(in) :: dt
-        !! time stepping size [s]
-    real(DP),intent(in) :: L_ref
-        !! reference length [m]
-    real(DP),intent(in) :: U_ref
-        !! reference velocity [m/s]
+        !! time stepping size [L/U]
+    real(DP),intent(in) :: Re
+        !! Reynolds number of flow field
     real(DP),intent(in) :: rho_f
-        !! density of fluid [kg/m3]
-    real(DP),intent(in) :: mu_f
-        !! viscosity of fluid [Pa*s]
+        !! density of fluid [ρ]
     real(DP),intent(in) :: rho_p
-        !! density of particle
+        !! density of particle [ρ]
     integer,intent(in) :: RK_order
         !! the order of Runge-Kutta scheme
-    real(DP),intent(in),optional :: gravity(3)
-        !! gravity force [m/s2]
-
-    real(DP) :: g_(3) = [real(DP):: 0.0, 0.0, -9.81]
-        ! default gravity force
-
+    real(DP),dimension(3),intent(in) :: gravity
+        !! gravity [U^2/L]
 
     this%coeff_f = 3./8.*(rho_f/rho_p)
-    call this%construct_motion(dt, L_ref, U_ref, rho_f, mu_f)
+    call this%construct_motion(dt, Re, gravity)
     this%n_rk = RK_order
 
-    if ( present(gravity) ) then
-        call this%set_body_force(gravity)
-    else
-        call this%set_body_force(g_)
-    end if
-
 end subroutine
+
+pure integer(IP) function get_RK_order(this)
+    !! order of Runge-Kutta scheme
+    class(droplet_motion_t),intent(in) :: this
+
+    get_RK_order = this%n_rk
+
+end function
 
 pure subroutine integrate_one_step(this, part)
     !! integrate governing equation to get next velocity and position of a partile
