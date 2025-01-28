@@ -85,7 +85,7 @@ subroutine set_writeout_settings(this, nwrite, write_ascii, path_write)
     
     this%nwrite_ = nwrite
     this%write_ascii_ = write_ascii
-    this%basename_vtk_ = path_write//"/"//"trajectory"
+    this%basename_vtk_ = path_write !//"/"//"trajectory"
 
 end subroutine
 
@@ -98,7 +98,7 @@ subroutine set_dump_settings(this, nback, backup_ascii, path_back)
     
     this%nback_  = nback
     this%backup_ascii_ = backup_ascii
-    this%basename_back_ = path_back//"/"//"backup"
+    this%basename_back_ = path_back !//"/"//"backup"
 
 end subroutine
 
