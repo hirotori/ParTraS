@@ -75,7 +75,7 @@ program main
 
     call mv_field_updater%disable_updater()
 
-    call mv_simulator%construct_simulator(10000, write_ascii, "./data/trajectory", 10000, .false., "./data/backup")
+    call mv_simulator%construct_simulator(10000, write_ascii, "./data", 10000, .false., "./data")
     call mv_simulator%set_motion(motion)
     call mv_simulator%run(1, 100000)
 

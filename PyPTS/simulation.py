@@ -39,8 +39,8 @@ _pypts._pypts_flib.set_dump_settings.restype = None
 
 
 
-def initialize(nwrite:int, write_ascii:bool, traj_dir:str, 
-               nback:int, backup_ascii:bool, backup_dir:str):
+def initialize(nwrite:int, write_ascii:bool, traj_path:str, 
+               nback:int, backup_ascii:bool, backup_path:str):
     """
     Initialize the simulation. 
 
@@ -51,8 +51,8 @@ def initialize(nwrite:int, write_ascii:bool, traj_dir:str,
 
     The trajectory file (.vtk) is a Legacy VTK format file and is mainly used for visualization. 
     The position and state of a particle at each time are stored at each independent time step. 
-    The user can control the time step interval at which the trajectory files are saved and the directory in which the files are saved. 
-    The name of the saved file is `traj_path/trajectory__####.vtk`, 
+    The user can control the time step interval `nwrite` at which the trajectory files are saved and 
+    the directory `traj_path` in which the files are saved. The name of the saved file is `traj_path/trajectory__####.vtk`, 
     where `traj_path` is the path where the trajectory file is saved and #### is the time step where the data was recorded.
 
     The backup file (.pdata) contains all the data of the particles at each time step. 
@@ -66,8 +66,6 @@ def initialize(nwrite:int, write_ascii:bool, traj_dir:str,
     backup_ascii (bool) : Save backupdata in ASCII.
     backup_dir (str) : Path of the directory where backup data ais stored. 
     """
-    traj_path = os.path.join(traj_dir, "trajectory")
-    backup_path = os.path.join(backup_dir, "particle")
     _pypts._pypts_flib.initialize_simulation(ctypes.byref(ctypes.c_int(nwrite)),
                                              ctypes.byref(ctypes.c_bool(write_ascii)),
                                              traj_path.encode(),
