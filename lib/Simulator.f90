@@ -167,7 +167,7 @@ subroutine run(this, nstart, nend)
     integer,intent(in) :: nstart
     integer,intent(in) :: nend
 
-    integer ncyc, i
+    integer ncyc, i, nactive
     !$ integer nthread, maxthread
 
     print "(A)", "============================================== "
@@ -247,13 +247,16 @@ subroutine run(this, nstart, nend)
 
     do ncyc = nstart, nend
 
+        nactive = count(mv_pdata%particles(:)%state == PARTICLE_ACTIVATE)
+
         if ( mod(ncyc, this%nwrite_) == 0 ) then
             !TODO: コンソール出力のタイミング制御と, 何を表示するかの策定. 
             print "(A)",    "-----------------------------------------------"
             print "(A,i0,A,f16.5,A)", "Timestep = ", ncyc, " t = (", ncyc*this%motion_%get_dt(), ") "
             !$ print "(A,i0)", "Num Thread = ", nthread
             print "(A)",    "-----------------------------------------------"                
-            print "('There are ', i0, ' floating particles')", count(mv_pdata%particles(:)%state == PARTICLE_ACTIVATE)
+            print "('There are ', i0, ' active particles')", nactive
+            print "('ref_cell not found = ', i0, ' / ', i0)", count(mv_pdata%particles(:)%ref_cell == REFCELL_OUTBOUNDS), mv_pdata%N_part
         end if
 
         call mv_field_updater%update_field(ncyc)
@@ -274,9 +277,14 @@ subroutine run(this, nstart, nend)
             call writeout_vtk(this%basename_vtk_, ncyc, this%write_ascii_)
         end if
 
+        if ( nactive == 0 ) then
+            print "(A)", "simulator_m/simulator_t%run::INFO:: There are no active particles."
+            exit
+        end if
+
     end do
 
-    print "(A)", "simulator_m/simulator_t%run:: Simulation finished"
+    print "(A)", "simulator_m/simulator_t%run::INFO:: Simulation finished"
 
 end subroutine
 
