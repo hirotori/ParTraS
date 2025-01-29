@@ -11,6 +11,7 @@ module droplet_motion_legacy_m
         !! したがって速度は実質1次精度と考えられる. 
         !! 半径の小さい粒子 (~ 1d-6)でも安定に計算できる.
         contains
+        procedure :: construct_droplet_motion_legacy
         procedure :: integrate_one_step
         procedure :: update_status
     end type
@@ -18,6 +19,25 @@ module droplet_motion_legacy_m
     public :: motion_legacy_t
 
 contains
+
+subroutine construct_droplet_motion_legacy(this, dt, Re, rho_f, rho_p, gravity)
+    !! construct an object describing the motion of droplets.
+
+    class(motion_legacy_t),intent(inout) :: this
+    real(DP),intent(in) :: dt
+        !! time stepping size [L/U]
+    real(DP),intent(in) :: Re
+        !! Reynolds number of flow field
+    real(DP),intent(in) :: rho_f
+        !! density of fluid [ρ]
+    real(DP),intent(in) :: rho_p
+        !! density of particle [ρ]
+    real(DP),dimension(3),intent(in) :: gravity
+        !! gravity [U^2/L]
+
+    call this%construct_droplet_motion(dt, Re, rho_f, rho_p, 0, gravity)
+
+end subroutine
 
 pure subroutine integrate_one_step(this, part)
     !! integrate governing equation to get next velocity and position of a partile
