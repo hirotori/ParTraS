@@ -26,7 +26,7 @@ field.init_field_vtk("../sax_flow/sax_flow.vtk", True)
 # motion
 L = U = 1.0
 RHO = 1.0
-n_rk = 4
+n_rk = 0
 rho_p = 1000.0/RHO
 rho_f = 1.0/RHO
 MU  = 1e-5

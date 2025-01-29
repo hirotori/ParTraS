@@ -82,10 +82,16 @@ subroutine set_writeout_settings(this, nwrite, write_ascii, path_write)
     integer,intent(in) :: nwrite
     logical,intent(in) :: write_ascii
     character(*),intent(in) :: path_write
+    logical exists
     
     this%nwrite_ = nwrite
     this%write_ascii_ = write_ascii
-    this%basename_vtk_ = path_write//"/"//"trajectory"
+    inquire(file=path_write, exist=exists)
+    if ( .not. exists ) then
+        error stop "simulator/set_writeout_settings::ERROR:: directory """//path_write//""" not found."
+    end if
+
+    this%basename_vtk_ = path_write//get_sep__()//"trajectory"
 
 end subroutine
 
@@ -95,10 +101,15 @@ subroutine set_dump_settings(this, nback, backup_ascii, path_back)
     integer,intent(in) :: nback
     logical,intent(in) :: backup_ascii
     character(*),intent(in) :: path_back
-    
+    logical exists
+
     this%nback_  = nback
     this%backup_ascii_ = backup_ascii
-    this%basename_back_ = path_back//"/"//"backup"
+    inquire(file=path_back, exist=exists)
+    if ( .not. exists ) then
+        error stop "simulator/set_backup_settings::ERROR:: directory """//path_back//""" not found."
+    end if
+    this%basename_back_ = path_back//get_sep__()//"backup"
 
 end subroutine
 
@@ -269,4 +280,25 @@ subroutine run(this, nstart, nend)
 
 end subroutine
 
+! private function
+character(1) function get_sep__() result(sep)
+    !! get file separator. 
+    !! The file separator is assumed to be “/” for MacOS and Linux, and “\” for Windows. 
+    !! If the detection fails, the separator is interpreted as an underscore “_”. 
+    character(256) path_env_
+    integer i, istat
+    call get_environment_variable("PATH", path_env_, status=istat)
+    if ( istat > 2 ) then
+        error stop "Environmental Error:: error for environment variable `PATH`="""//trim(path_env_)//""" "
+    end if
+    do i = 1, 256
+        sep = path_env_(i:i)
+        if ( sep == "/" .or. sep == "\") then
+            return
+        end if
+    end do
+
+    ! 上で判定できない場合. 
+    sep = "_"
+end function
 end module simulator_m

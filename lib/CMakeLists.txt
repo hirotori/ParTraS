@@ -2,6 +2,7 @@ add_library(partras STATIC
     AFDETImporter.f90
     BaseImporter.f90
     DropletMotion.f90
+    DropletMotionLegacy.f90
     DumpFile.f90
     FieldUpdater.f90
     Geometry.f90
