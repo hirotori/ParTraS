@@ -155,12 +155,12 @@ pure integer function get_current_step(this)
     !! get current timestep of flow field
     class(field_updater_t),intent(in) :: this
 
-    get_current_step = this%interval_*this%interval_
+    get_current_step = this%counter_*this%interval_
 
 end function
 
 pure function get_current_filename(this) result(fname)
-    !! get current timestep of flow field
+    !! get current filename of flow field
     class(field_updater_t),intent(in) :: this
 
     character(128) fname
