@@ -88,7 +88,7 @@ pure subroutine integrate_one_step(this, part)
         v_(:) = part%vel(:) + alpha_k*f_(:)*dt
 
         call search_reference_cell(part%pos(:), r_, part%ref_cell, 10)
-        if ( part%ref_cell == REFCELL_OUTBOUNDS ) then
+        if ( part%ref_cell <= REFCELL_OUTBOUNDS ) then
             part%state = PARTICLE_INACTIVATE
             !TODO move particle onto wall
             v_ = 0.d0
