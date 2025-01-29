@@ -11,7 +11,14 @@ _pypts._pypts_flib.assign_droplet_motion.argtypes = [
                                          np.ctypeslib.ndpointer(dtype=np.float64)]
 _pypts._pypts_flib.assign_droplet_motion.restype = None
 
+_pypts._pypts_flib.delete_motion.argtypes = []
+_pypts._pypts_flib.delete_motion.restype = None
 
+def disable_motion():
+    """
+    delete current motion object from simulator.
+    """
+    _pypts._pypts_flib.delete_motion()
 
 def droplet(dt:float, Re:float, rho_f:float, rho_p:float, RK_order:int,
             gravity:list[float]) -> None:

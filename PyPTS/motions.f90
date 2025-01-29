@@ -8,6 +8,12 @@ module motions_m
     
 contains
 
+subroutine delete_motion() bind(c, name="delete_motion")
+
+    call mv_simulator%reset_motion()
+
+end subroutine
+
 subroutine assign_droplet_motion(dt, Re, rho_f, rho_p, RK_order, body_force) bind(c, name="assign_droplet_motion")
     real(c_double),intent(in) :: dt
     real(c_double),intent(in) :: Re
