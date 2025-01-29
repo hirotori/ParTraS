@@ -7,6 +7,8 @@ module droplet_motion_m
     private
 
     type,extends(motion_t) :: droplet_motion_t
+        !! 飛沫の運動. Runge-Kutta法で解く. 
+        !! 半径が小さい (<= 1d-6)とき, 安定に計算できる時間刻み幅がとても小さい (dt <= 1e-6). 
         integer,private :: n_rk
             !! number of steps in Runge-Kutta
 
@@ -17,6 +19,8 @@ module droplet_motion_m
         procedure :: integrate_one_step 
         procedure update_status
         procedure :: compute_force => compute_force_droplet
+        procedure Cd
+        procedure get_coeff_f
         procedure,non_overridable :: get_RK_order
     end type
     
@@ -54,6 +58,15 @@ pure integer(IP) function get_RK_order(this)
     get_RK_order = this%n_rk
 
 end function
+
+pure real(DP) function get_coeff_f(this)
+    !! coefficient for drag force
+    class(droplet_motion_t),intent(in) :: this
+
+    get_coeff_f = this%coeff_f
+
+end function
+
 
 pure subroutine integrate_one_step(this, part)
     !! integrate governing equation to get next velocity and position of a partile
@@ -118,11 +131,14 @@ pure subroutine compute_force_droplet(this, v, u, rad, f)
     dv = u - v
     dv_norm = sqrt(sum(dv*dv))
     Re_p_ = dv_norm*2*rad*this%get_Re_ref()
-    f(:) = this%coeff_f*Cd(Re_p_)/rad*dv_norm*dv + this%get_body_force()
+    f(:) = this%coeff_f*this%Cd(Re_p_)/rad*dv_norm*dv + this%get_body_force()
 
 end subroutine
 
-pure real(8) function Cd(Re)
+pure real(8) function Cd(this, Re)
+    !! drag coefficient. 
+    !! Cd = 0.1 is the limit value for Re -> infinity (eulerian flow).
+    class(droplet_motion_t),intent(in) :: this
     real(8),intent(in) :: Re
 
     real(8),parameter :: min_eps = epsilon(1.d0)
