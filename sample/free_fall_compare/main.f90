@@ -50,9 +50,9 @@ program main
     call free_fall_test(nend, nwrite, motion_lg, "Legacy.dat")
 
     !RK-4
-    !call motion%construct_droplet_motion(dt, Re, rho_f, rho_p, n_rk, g)
+    call motion%construct_droplet_motion(dt, Re, rho_f, rho_p, n_rk, g)
 
-    !call free_fall_test(nend, nwrite, motion, "RK4.dat")
+    call free_fall_test(nend, nwrite, motion, "RK4.dat")
 
     ! 結果: z方向速度 vs 時間のプロット
     ! 1. Cd = 0.3 = const.のとき. 
@@ -131,6 +131,7 @@ program main
     end subroutine
 
     real(DP) function exact_vel(n, dt)
+        !! exact solution for velocity with constant drag coefficient
         integer,intent(in) :: n
         real(DP),intent(in) :: dt
 
@@ -143,6 +144,7 @@ program main
     end function
 
     real(DP) function exact_pos(z0, n, dt)
+        !! exact solution for position with constant drag coefficient
         real(DP),intent(in) :: z0
         integer,intent(in) :: n
         real(DP),intent(in) :: dt
