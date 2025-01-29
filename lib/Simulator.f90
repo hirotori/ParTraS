@@ -168,6 +168,7 @@ subroutine run(this, nstart, nend)
     integer,intent(in) :: nend
 
     integer ncyc, i, nactive
+    type(particle_t) part_
     !$ integer nthread, maxthread
 
     print "(A)", "============================================== "
@@ -244,6 +245,13 @@ subroutine run(this, nstart, nend)
     !$omp end single
     !$omp end parallel
     !$ print "('simulator_m/simulator_t%run::INFO::Num of thread = ', i0, '/', i0)", nthread, maxthread
+
+    !$omp parallel do private(part_)
+    do i = 1, mv_pdata%N_part
+        part_ = mv_pdata%particles(i)
+        call this%motion_%compute_force(part_%vel, mv_flow_field%velocity(:, part_%ref_cell), part_%radius, part_%f)
+        mv_pdata%particles(i) = part_
+    end do
 
     do ncyc = nstart, nend
 
