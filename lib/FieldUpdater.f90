@@ -2,6 +2,7 @@ module field_updater_m
     use kind_parameters_m
     use flow_field_m
     use base_importer_m
+    use unstructured_mesh_m
     implicit none
     private
 
@@ -12,10 +13,6 @@ module field_updater_m
         private
         class(ugrid_importer_t),allocatable :: importer_
             !! importer
-        type(cell_type_t) :: ct_
-            !! cell type definitions
-        type(face_vertex_def_t) :: fv_def_
-            !! face-vertex connectivity definition
         real(DP) :: dt_flow_
             !! time stepping size in flow field
         real(DP) :: dt_part_
@@ -59,16 +56,12 @@ logical function assigned(this)
 
 end function
 
-subroutine construct_field_updater(this, importer, cell_type_def, face_vert_def, dt_f, dt_p, &
+subroutine construct_field_updater(this, importer, dt_f, dt_p, &
                                    basename, pad, ext, field_only, verts_only, interval)
     !! create field_updater object
     class(field_updater_t),intent(inout) :: this
     class(ugrid_importer_t),intent(in) :: importer
         !! importer used in this updater
-    type(cell_type_t),intent(in) :: cell_type_def
-        !! cell type definitions for importer
-    type(face_vertex_def_t),intent(in) :: face_vert_def
-        !! face-vertex connectivity definitions for importer
     real(DP),intent(in) :: dt_f
         !! time stepping size for fluid flow
     real(DP),intent(in) :: dt_p
@@ -87,8 +80,6 @@ subroutine construct_field_updater(this, importer, cell_type_def, face_vert_def,
         !! Output interval of flow field file
 
     allocate(this%importer_, source=importer)
-    this%ct_ = cell_type_def
-    this%fv_def_ = face_vert_def
 
     this%dt_flow_ = dt_f
     this%dt_part_ = dt_p
@@ -141,7 +132,7 @@ subroutine update_field(this, ncyc)
 
         call this%importer_%read_file(ugrid_, .true.)
         
-        call update_flow_field(ugrid_, this%ct_, this%fv_def_, this%field_only_, this%verts_only_)
+        call update_flow_field(ugrid_, this%field_only_, this%verts_only_)
     
         call this%importer_%close()
 

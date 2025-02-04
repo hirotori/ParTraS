@@ -1,6 +1,6 @@
 program test_field_updater
     use kind_parameters_m
-    use base_importer_m, only: ugrid_struct_t
+    use unstructured_mesh_m
     use flow_field_m
     use vtk_importer_m
     use field_updater_m
@@ -17,14 +17,14 @@ program test_field_updater
     call vtk_importer%read_file(vtk_ugrid, shift_index=.true.)
     call vtk_importer%close()
 
-    call construct_flow_field(vtk_ugrid, CELL_TYPE_VTK, FACE_VERT_DEF_VTK)
+    call construct_flow_field(vtk_ugrid)
 
     call importer%open_ascii_on()
     call importer%open_stream_on()
 
     dt_f = 0.01
     dt_p = 0.01
-    call mv_field_updater%construct_field_updater(importer, CELL_TYPE_VTK, FACE_VERT_DEF_VTK, & 
+    call mv_field_updater%construct_field_updater(importer, & 
                                                   dt_f, dt_p, &
                                                   "flow_", 0, ".vtk", .true., .true., 1)
 

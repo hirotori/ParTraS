@@ -37,7 +37,7 @@ ADDTEST(mesh_field_vtk)
 ADDTEST(vtk_importer)
 ADDTEST(afdet_importer)
 ADDTEST(refcell_search)
-# ADDTEST(field_updater)
+ADDTEST(field_updater)
 
 if(OpenMP_Fortran_FOUND)
     ADDTEST(refcell_search_parallel)
