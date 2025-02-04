@@ -49,7 +49,7 @@ module flow_field_m
 contains
 
 subroutine construct_flow_field(ugrid, cell_type_def, face_vert_def)
-    type(ugrid_struct_t),intent(in) :: ugrid
+    type(ugrid_struct_t),intent(inout) :: ugrid
         !! unstructured grid importer
     type(cell_type_t),intent(in) :: cell_type_def
         !! cell type definition
@@ -64,8 +64,8 @@ end subroutine
 
 subroutine update_members_(ugrid, field_only, verts_only)
     !! update members of flow_field_t. 
-    type(ugrid_struct_t),intent(in) :: ugrid
-        !! grid object
+    type(ugrid_struct_t),intent(inout) :: ugrid
+        !! grid object. all members are deallocated
     logical,intent(in) :: field_only
         !! whether it updates field vairable (cell velocity) only or not
     logical,intent(in) :: verts_only
@@ -89,21 +89,21 @@ subroutine update_members_(ugrid, field_only, verts_only)
             call delete_mesh_field()
             
             !geometry
-            allocate(mv_flow_field%verts, source=ugrid%verts)
+            call move_alloc(ugrid%verts, mv_flow_field%verts)
 
             !COMMENT: if分岐増えたせいで, とっちらかってきた. でもこれ以上は複雑にならないはず...
             ! 以下, ugridのメンバをコピーする形で構築. 割り付けられていない場合はこちらで構築. 
 
             if ( allocated(ugrid%cell2verts) ) then
-                allocate(mv_flow_field%cell2verts, source=ugrid%cell2verts)
+                call move_alloc(ugrid%cell2verts, mv_flow_field%cell2verts)
             else
                 call create_cell_verts(ugrid%ncell, ugrid%conns, ugrid%offsets, mv_flow_field%cell2verts)
             end if
 
             ! 面-セル接続関係は両方が割り付けられている場合のみugridのデータを利用する. 
             if ( allocated(ugrid%face2cells) .and. allocated(ugrid%face2verts) ) then
-                allocate(mv_flow_field%face2cells, source=ugrid%face2cells)
-                allocate(mv_flow_field%face2verts, source=ugrid%face2verts)
+                call move_alloc(ugrid%face2cells, mv_flow_field%face2cells)
+                call move_alloc(ugrid%face2verts, mv_flow_field%face2verts)
             else
                 call create_faces(mv_flow_field%face2cells, mv_flow_field%face2verts)
             end if
@@ -116,15 +116,15 @@ subroutine update_members_(ugrid, field_only, verts_only)
             mv_flow_field%nface = size(mv_flow_field%face2cells, dim=2)
             
             if ( allocated(ugrid%cell_centers) ) then
-                allocate(mv_flow_field%cell_centers, source=ugrid%cell_centers)
+                call move_alloc(ugrid%cell_centers, mv_flow_field%cell_centers)
             else
                 allocate(mv_flow_field%cell_centers(3,mv_flow_field%ncell))
                 call compute_cell_centers(mv_flow_field%cell2verts, mv_flow_field%verts, mv_flow_field%cell_centers)
             end if
 
             if ( allocated(ugrid%face_centers) .and. allocated(ugrid%face_normals) ) then
-                allocate(mv_flow_field%face_centers, source=ugrid%face_centers)
-                allocate(mv_flow_field%face_normals, source=ugrid%face_normals)                
+                call move_alloc(ugrid%face_centers, mv_flow_field%face_centers)
+                call move_alloc(ugrid%face_normals, mv_flow_field%face_normals)
             else
                 allocate(mv_flow_field%face_centers(3,mv_flow_field%nface))
                 allocate(mv_flow_field%face_normals(3,mv_flow_field%nface))
@@ -153,7 +153,7 @@ end subroutine
 
 subroutine update_flow_field(ugrid, cell_type_def, face_vert_def, field_only, verts_only)
     !! update flow field. 
-    type(ugrid_struct_t),intent(in) :: ugrid
+    type(ugrid_struct_t),intent(inout) :: ugrid
         !! unstructured grid importer
     type(cell_type_t),intent(in) :: cell_type_def
         !! cell type definition
