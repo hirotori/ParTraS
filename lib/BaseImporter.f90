@@ -1,61 +1,11 @@
 module base_importer_m
     use kind_parameters_m
+    use unstructured_mesh_m, only: ugrid_struct_t
     implicit none
     private
 
     integer,parameter :: IMPORT_ASCII  = 0
     integer,parameter :: IMPORT_BINARY = 1
-
-
-    type cell_type_t
-        !! cell type definition. 
-        integer :: cell_type_tetra
-        integer :: cell_type_wedge
-        integer :: cell_type_hexa
-        integer :: cell_type_pyram
-    end type
-
-    type face_vertex_def_t
-        !! face-vertex connectivity definition. 
-        !! 1st dim is [n, v0, v1, v2, ..., vn] where n is the number of vertex on a face 
-        !! 2nd dim of an array is face id. 
-        !! NOTE: vn = -1 means the vertex vn is not found in the face
-        integer :: face_def_tetra(3+1,4)
-            !! definition for tetrahedron
-        integer :: face_def_wedge(4+1,5)
-            !! definition for wedge (prism)
-        integer :: face_def_hexa(4+1,6)
-            !! definition for hexahedron
-        integer :: face_def_pyram(4+1,5)
-            !! definition for pyramid
-    end type
-
-    type ugrid_struct_t
-        !! basical unstructured grid data. 
-        !! This is used for importing data from external file or define data manually
-        integer(IP) ncell
-        integer(IP) nvert
-        real(DP),allocatable :: verts(:,:)
-        integer(IP),allocatable :: conns(:)
-        integer(IP),allocatable :: offsets(:)
-        integer(IP),allocatable :: cell2verts(:,:)
-        integer(IP),allocatable :: cell_types(:)
-        real(DP),allocatable :: cell_velocity(:,:)
-
-        ! CFDデータのサポート. 
-        ! 特定のCFDデータは面ーセル接続関係をファイルに書き込む場合がある. 
-        ! それらのデータを読み, 直接`flow_field_t`に渡せるようにメンバを追加. 
-        ! ファイルにこれらのデータがない場合は割り付けてはならない.
-        ! `flow_field_t`はこれらが割り付けられていない場合自分で構築する.  
-        integer(IP),allocatable :: face2cells(:,:)
-        integer(IP),allocatable :: face2verts(:,:)
-
-        !幾何量
-        real(DP),allocatable :: cell_centers(:,:)
-        real(DP),allocatable :: face_centers(:,:)
-        real(DP),allocatable :: face_normals(:,:)
-    end type
-
     type,abstract:: ugrid_importer_t
         integer,private :: unit_
         logical,private :: shift_index_
@@ -73,30 +23,12 @@ module base_importer_m
         procedure,non_overridable :: close
     end type
 
-    public ugrid_struct_t, ugrid_importer_t, &
-           cell_type_t, face_vertex_def_t, &
-           delete_ugrid, &
+    public ugrid_importer_t, &
            IMPORT_ASCII, &
            IMPORT_BINARY !, &
         !    FIELD_NAME_LEN
 
 contains
-
-subroutine delete_ugrid(this)
-    type(ugrid_struct_t),intent(inout) :: this
-
-    if (allocated(this%verts))        deallocate(this%verts)
-    if (allocated(this%conns))        deallocate(this%conns)
-    if (allocated(this%offsets))      deallocate(this%offsets)
-    if (allocated(this%cell_types))   deallocate(this%cell_types)
-    if (allocated(this%cell_velocity))deallocate(this%cell_velocity)
-
-    ! this%filename = FILENAME_NOT_ASSIGNED
-    if ( allocated(this%face2cells) ) deallocate(this%face2cells) 
-    if ( allocated(this%face2verts) ) deallocate(this%face2verts) 
-    if ( allocated(this%face_centers) ) deallocate(this%face_centers) 
-    if ( allocated(this%cell_centers) ) deallocate(this%cell_centers) 
-end subroutine
 
 ! ~~~~~~~~~~~~~~~~~ importer ~~~~~~~~~~~~~~~~~~~~ !
 

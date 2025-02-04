@@ -1,5 +1,5 @@
 program test
-    use base_importer_m, only: ugrid_struct_t, delete_ugrid
+    use unstructured_mesh_m
     use vtk_importer_m
     use flow_field_m
     implicit none
@@ -28,7 +28,7 @@ program test
 
     allocate(v(3,vtk_ugrid%ncell), source=0.d0)
     vtk_ugrid%cell_velocity = v
-    call construct_flow_field(vtk_ugrid, CELL_TYPE_VTK, FACE_VERT_DEF_VTK)
+    call construct_flow_field(vtk_ugrid)
     call delete_ugrid(vtk_ugrid)
 
     do i = 1, nsample

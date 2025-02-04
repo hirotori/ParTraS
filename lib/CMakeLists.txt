@@ -4,14 +4,14 @@ add_library(partras STATIC
     DropletMotion.f90
     DropletMotionLegacy.f90
     DumpFile.f90
-    FieldUpdater.f90
+#    FieldUpdater.f90
     Geometry.f90
     Idlist.f90
     KindParameters.f90
     Motion.f90
     FlowField.f90
     ParticleData.f90
-    Simulator.f90
+#    Simulator.f90
     UnstructuredMesh.f90
     VTKImporter.f90
     Version.f90

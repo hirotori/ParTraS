@@ -1,6 +1,5 @@
 program test
-    use vtk_importer_m, only : CELL_TYPE_VTK, FACE_VERT_DEF_VTK
-    use base_importer_m, only : ugrid_struct_t
+    use unstructured_mesh_m
     use flow_field_m
     implicit none
     integer,parameter :: nvert = 12
@@ -71,7 +70,7 @@ program test
     ugrid%verts = verts
     ugrid%cell_velocity = vv
         
-    call construct_flow_field(ugrid, CELL_TYPE_VTK, FACE_VERT_DEF_VTK)
+    call construct_flow_field(ugrid)
     
     if ( mv_flow_field%ncell /= 2 ) then
         error stop "ncell"

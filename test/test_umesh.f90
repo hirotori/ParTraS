@@ -1,5 +1,4 @@
 program test
-    use vtk_importer_m, only : CELL_TYPE_VTK, FACE_VERT_DEF_VTK
     use unstructured_mesh_m
     implicit none
     integer,parameter :: nvert = 12
@@ -9,14 +8,23 @@ program test
     integer,parameter :: cell_types(2)     = [12, 12]
     integer,allocatable :: face2cells(:,:), face2verts(:,:), boundary_faces(:), cell_offsets(:), cell_faces(:)
     integer i
-    call construct_half_faces(ncell, nvert, connectivity, offset, cell_types, CELL_TYPE_VTK, FACE_VERT_DEF_VTK)
+    type(half_face_t),allocatable :: half_faces(:)
+    type(ugrid_struct_t) ugrid
+
+    ugrid%ncell = ncell
+    ugrid%nvert = nvert
+    ugrid%conns = connectivity
+    ugrid%offsets = offset
+    ugrid%cell_types = cell_types
+
+    call construct_half_faces(ugrid, half_faces)
     print*, ""
     do i = 1, size(half_faces)
         print "('(owner, pair) = (', i0,1x,i0, ')')", half_faces(i)%owner-1, half_faces(i)%pair
         print "('verts = ', *(i0,:,',',1x), ']')", half_faces(i)%vertices(1:half_faces(i)%vert_count)-1
     end do
 
-    call create_faces(face2cells,face2verts)
+    call create_faces(half_faces, face2cells,face2verts)
 
     do i = 1, size(face2cells,dim=2)
         print*, face2cells(:,i)

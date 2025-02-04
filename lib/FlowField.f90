@@ -1,7 +1,6 @@
 module flow_field_m
     !! treat 3d unstructured flow field.
     use kind_parameters_m
-    use base_importer_m, only : ugrid_struct_t, cell_type_t, face_vertex_def_t !, FIELD_NAME_LEN
     use unstructured_mesh_m
     use geometry_m
     implicit none
@@ -38,6 +37,8 @@ module flow_field_m
     type(flow_field_t),protected :: mv_flow_field
         !! flow field object (module variable)
 
+    type(half_face_t),allocatable :: mv_half_faces_(:)
+
     public mv_flow_field, &
            construct_flow_field, &
            update_flow_field, &
@@ -48,17 +49,13 @@ module flow_field_m
 
 contains
 
-subroutine construct_flow_field(ugrid, cell_type_def, face_vert_def)
+subroutine construct_flow_field(ugrid)
     type(ugrid_struct_t),intent(inout) :: ugrid
         !! unstructured grid importer
-    type(cell_type_t),intent(in) :: cell_type_def
-        !! cell type definition
-    type(face_vertex_def_t),intent(in) :: face_vert_def
-        !! face-vertex connectivity definition
 
     ! これを呼び出す際はフィールド変数はすべて未割り付けと仮定. 
     ! すでに割り付けしているのにこれを呼び出した場合: 一旦delete処理が入るので普通に動く. 
-    call update_flow_field(ugrid, cell_type_def, face_vert_def, .false., .false.)
+    call update_flow_field(ugrid, .false., .false.)
 
 end subroutine
 
@@ -105,7 +102,9 @@ subroutine update_members_(ugrid, field_only, verts_only)
                 call move_alloc(ugrid%face2cells, mv_flow_field%face2cells)
                 call move_alloc(ugrid%face2verts, mv_flow_field%face2verts)
             else
-                call create_faces(mv_flow_field%face2cells, mv_flow_field%face2verts)
+                call construct_half_faces(ugrid, mv_half_faces_)
+                call create_faces(mv_half_faces_, mv_flow_field%face2cells, mv_flow_field%face2verts)
+                deallocate(mv_half_faces_)
             end if
 
             call create_boundary_faces(mv_flow_field%face2cells, mv_flow_field%boundary_faces)
@@ -151,28 +150,16 @@ subroutine update_members_(ugrid, field_only, verts_only)
 
 end subroutine
 
-subroutine update_flow_field(ugrid, cell_type_def, face_vert_def, field_only, verts_only)
+subroutine update_flow_field(ugrid, field_only, verts_only)
     !! update flow field. 
     type(ugrid_struct_t),intent(inout) :: ugrid
         !! unstructured grid importer
-    type(cell_type_t),intent(in) :: cell_type_def
-        !! cell type definition
-    type(face_vertex_def_t),intent(in) :: face_vert_def
-        !! face-vertex connectivity definition
     logical,intent(in) :: field_only
     logical,intent(in) :: verts_only
-
-
-    !NOTE: メッシュがポリへドラルの場合, そもそもhalf_facesが構築できない. その場合half_faceの構築はskipするしかない. 
-    !      したがって, ポリへドラルメッシュの場合面ーセル関係がugridで全て構築済みでなければならない. 
-    if ( .not. field_only .and. .not. verts_only) call construct_half_faces(ugrid, cell_type_def, face_vert_def)
 
     call update_members_(ugrid, field_only, verts_only)
 
     call validate_flow_field()
-
-    ! delete current data of half faces
-    call delete_half_faces()
     
     mv_flow_field%is_assigned = .true.
 

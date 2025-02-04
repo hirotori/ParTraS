@@ -1,13 +1,99 @@
 module unstructured_mesh_m
+    use kind_parameters_m
     use id_list_m
-    use base_importer_m
     implicit none
     private
     integer,parameter :: NULL_ID = 0
     integer,parameter :: CELL_OUTBOUND = 0
     integer,parameter :: CELL_VERT_SIZE = 10
     integer,parameter :: FACE_VERT_SIZE = 6
-    
+
+    integer,parameter :: VTK_TETRA = 10
+    integer,parameter :: VTK_WEDGE = 13
+    integer,parameter :: VTK_HEXA  = 12
+    integer,parameter :: VTK_PYRAMID = 14
+
+    type ugrid_struct_t
+        !! basical unstructured grid data. 
+        !! This is used for importing data from external file or define data manually
+        integer(IP) ncell
+        integer(IP) nvert
+        real(DP),allocatable :: verts(:,:)
+        integer(IP),allocatable :: conns(:)
+        integer(IP),allocatable :: offsets(:)
+        integer(IP),allocatable :: cell2verts(:,:)
+        integer(IP),allocatable :: cell_types(:)
+        real(DP),allocatable :: cell_velocity(:,:)
+
+        ! CFDデータのサポート. 
+        ! 特定のCFDデータは面ーセル接続関係をファイルに書き込む場合がある. 
+        ! それらのデータを読み, 直接`flow_field_t`に渡せるようにメンバを追加. 
+        ! ファイルにこれらのデータがない場合は割り付けてはならない.
+        ! `flow_field_t`はこれらが割り付けられていない場合自分で構築する.  
+        integer(IP),allocatable :: face2cells(:,:)
+        integer(IP),allocatable :: face2verts(:,:)
+
+        !幾何量
+        real(DP),allocatable :: cell_centers(:,:)
+        real(DP),allocatable :: face_centers(:,:)
+        real(DP),allocatable :: face_normals(:,:)
+    end type
+
+    type cell_type_t
+        !! cell type definition. 
+        integer :: cell_type_tetra
+        integer :: cell_type_wedge
+        integer :: cell_type_hexa
+        integer :: cell_type_pyram
+    end type
+
+    type face_vertex_def_t
+        !! face-vertex connectivity definition. 
+        !! 1st dim is [n, v0, v1, v2, ..., vn] where n is the number of vertex on a face 
+        !! 2nd dim of an array is face id. 
+        !! NOTE: vn = -1 means the vertex vn is not found in the face
+        integer :: face_def_tetra(3+1,4)
+            !! definition for tetrahedron
+        integer :: face_def_wedge(4+1,5)
+            !! definition for wedge (prism)
+        integer :: face_def_hexa(4+1,6)
+            !! definition for hexahedron
+        integer :: face_def_pyram(4+1,5)
+            !! definition for pyramid
+    end type
+
+    integer,parameter :: face_def_tetra(4,4) = reshape([[3, 1,3,2], &
+                                                        [3, 1,2,4], &
+                                                        [3, 2,3,4], &
+                                                        [3, 3,1,4]], shape=shape(face_def_tetra))
+
+    integer,parameter :: face_def_wedge(5,5) = reshape([[3, 1,3,2,-1], &
+                                                        [3, 4,5,6,-1], &
+                                                        [4, 1,2,5,4], &
+                                                        [4, 2,3,6,5], &
+                                                        [4, 1,4,6,3]], shape=shape(face_def_wedge))
+
+    integer,parameter :: face_def_hexa(5,6) = reshape([[4, 2,1,4,3], &
+                                                       [4, 1,5,8,4], &
+                                                       [4, 5,6,7,8], &
+                                                       [4, 2,3,7,6], &
+                                                       [4, 2,6,5,1], &
+                                                       [4, 3,4,8,7]], shape=shape(face_def_hexa))
+
+    integer,parameter :: face_def_pyram(5,5) = reshape([[3, 5,1,2,-1], &
+                                                        [3, 5,2,3,-1], &
+                                                        [3, 5,3,4,-1], &
+                                                        [3, 5,4,1,-1], &
+                                                        [4, 1,4,3,2]], shape=shape(face_def_pyram)) 
+
+    type(cell_type_t),parameter :: CELL_TYPE_VTK = cell_type_t(VTK_TETRA, VTK_WEDGE, VTK_HEXA, VTK_PYRAMID)
+        !! cell type definition for VTK (module variable)
+    type(face_vertex_def_t),parameter :: FACE_VERT_DEF_VTK = face_vertex_def_t(face_def_tetra, &
+                                                                               face_def_wedge, &
+                                                                               face_def_hexa, &
+                                                                               face_def_pyram)
+        !! face-vertex connectivity definition for VTK (module variable)
+
     type half_face_t
         integer :: pair  = NULL_ID
         integer :: owner = NULL_ID
@@ -15,63 +101,48 @@ module unstructured_mesh_m
         integer vert_count
     end type
 
-    type(half_face_t),allocatable,protected :: half_faces(:)
-        !! half-face array (module variable)
-
-    interface construct_half_faces
-        module procedure construct_half_faces_importer
-        module procedure construct_half_faces_c2v
-        module procedure construct_half_faces_conns
-    end interface
-
-    public half_faces, &
+    public half_face_t, ugrid_struct_t, &
            construct_half_faces, &
            create_faces, &
            create_boundary_faces, &
            create_cell_faces, &
            create_cell_verts, &
-           delete_half_faces, &
-           CELL_VERT_SIZE, FACE_VERT_SIZE
+           delete_ugrid, &
+           CELL_VERT_SIZE, FACE_VERT_SIZE, &
+           VTK_HEXA, VTK_PYRAMID, VTK_TETRA, VTK_WEDGE
 
     contains
 
-    subroutine construct_half_faces_importer(ugrid, cell_type_def, face_vert_def)
+    subroutine construct_half_faces(ugrid, half_faces)
         !! construct half-face array. result is stored in a module variable `half_faces`.
         !! previous half_face data is deleted when this is called.
 
         type(ugrid_struct_t),intent(in) :: ugrid
             !! unstructured grid importer
-        type(cell_type_t),intent(in) :: cell_type_def
-            !! cell type definition
-        type(face_vertex_def_t),intent(in) :: face_vert_def
-            !! face-vertex connectivity definition
+        type(half_face_t),allocatable,intent(inout) :: half_faces(:)
 
-        call construct_half_faces_conns(ugrid%ncell, ugrid%nvert, ugrid%conns, ugrid%offsets, ugrid%cell_types, &
-        cell_type_def, face_vert_def)
+        call construct_half_faces_conns(ugrid%ncell, ugrid%nvert, ugrid%conns, ugrid%offsets, ugrid%cell_types, half_faces)
 
     end subroutine
 
-    subroutine construct_half_faces_c2v(ncell, nvert, cell2verts, cell_types, cell_type_def, face_vert_def)
-        !! deprecated. 
-        !! construct half-face array. result is stored in a module variable `half_faces`.
-        integer,intent(in) :: ncell
-            !! number of cell
-        integer,intent(in) :: nvert
-            !! number of vertices
-        integer,intent(in) :: cell2verts(:,:)
-            !! cell offset array
-        integer,intent(in) :: cell_types(:)
-            !! cell type array
-        type(cell_type_t),intent(in) :: cell_type_def
-        type(face_vertex_def_t),intent(in) :: face_vert_def
+    ! subroutine construct_half_faces_c2v(ncell, nvert, cell2verts, cell_types)
+    !     !! deprecated. 
+    !     !! construct half-face array. result is stored in a module variable `half_faces`.
+    !     integer,intent(in) :: ncell
+    !         !! number of cell
+    !     integer,intent(in) :: nvert
+    !         !! number of vertices
+    !     integer,intent(in) :: cell2verts(:,:)
+    !         !! cell offset array
+    !     integer,intent(in) :: cell_types(:)
+    !         !! cell type array
 
+    !     !convert cell2verts to connectivity and offset array
+    !     !@NOTE むしろ connectivityとoffsetsからcell2verts作ったほうが効率的かも. 未実装. 
 
-        !convert cell2verts to connectivity and offset array
-        !@NOTE むしろ connectivityとoffsetsからcell2verts作ったほうが効率的かも. 未実装. 
+    ! end subroutine
 
-    end subroutine
-
-    subroutine construct_half_faces_conns(ncell, nvert, connectivities, offsets, cell_types, cell_type_def, face_vert_def)
+    subroutine construct_half_faces_conns(ncell, nvert, connectivities, offsets, cell_types, half_faces)
         !! construct half-face array. result is stored in a module variable `half_faces`.
         !! previous half_face data is deleted when this is called.
         integer,intent(in) :: ncell
@@ -84,10 +155,7 @@ module unstructured_mesh_m
             !! cell offset array
         integer,intent(in) :: cell_types(:)
             !! cell type array
-        type(cell_type_t),intent(in) :: cell_type_def
-            !! cell type definition
-        type(face_vertex_def_t),intent(in) :: face_vert_def
-            !! face-vertex connectivity definition
+        type(half_face_t),allocatable,intent(inout) :: half_faces(:)
 
         integer,allocatable :: face_def_(:,:)
         integer,allocatable :: candidates(:)
@@ -99,12 +167,10 @@ module unstructured_mesh_m
 
         type(id_list_t),allocatable :: vert2face(:)
 
-        call delete_half_faces()
-
-        ntet = count(cell_types == cell_type_def%cell_type_tetra)
-        nwed = count(cell_types == cell_type_def%cell_type_wedge)
-        nhex = count(cell_types == cell_type_def%cell_type_hexa)
-        npyr = count(cell_types == cell_type_def%cell_type_pyram)
+        ntet = count(cell_types == CELL_TYPE_VTK%cell_type_tetra)
+        nwed = count(cell_types == CELL_TYPE_VTK%cell_type_wedge)
+        nhex = count(cell_types == CELL_TYPE_VTK%cell_type_hexa)
+        npyr = count(cell_types == CELL_TYPE_VTK%cell_type_pyram)
         nhface = ntet*4 + nwed*5 + nhex*6 + npyr*5
 
         allocate(half_faces(nhface))
@@ -114,17 +180,17 @@ module unstructured_mesh_m
             nvert_cell = offsets(ic+1) - st_id
             verts_(:nvert_cell) = connectivities(st_id:st_id+nvert_cell-1)
 
-            if (cell_types(ic) == cell_type_def%cell_type_tetra) then
-                face_def_ = face_vert_def%face_def_tetra
+            if (cell_types(ic) == CELL_TYPE_VTK%cell_type_tetra) then
+                face_def_ = FACE_VERT_DEF_VTK%face_def_tetra
                 nface = 4
-            else if (cell_types(ic) == cell_type_def%cell_type_wedge) then
-                face_def_ = face_vert_def%face_def_wedge
+            else if (cell_types(ic) == CELL_TYPE_VTK%cell_type_wedge) then
+                face_def_ = FACE_VERT_DEF_VTK%face_def_wedge
                 nface = 5
-            else if (cell_types(ic) == cell_type_def%cell_type_hexa) then
-                face_def_ = face_vert_def%face_def_hexa
+            else if (cell_types(ic) == CELL_TYPE_VTK%cell_type_hexa) then
+                face_def_ = FACE_VERT_DEF_VTK%face_def_hexa
                 nface = 6
-            else if (cell_types(ic) == cell_type_def%cell_type_pyram) then
-                face_def_ = face_vert_def%face_def_pyram
+            else if (cell_types(ic) == CELL_TYPE_VTK%cell_type_pyram) then
+                face_def_ = FACE_VERT_DEF_VTK%face_def_pyram
                 nface = 5
             else                
                 error stop "error::construct_half_faces:: unknown cell type"
@@ -241,8 +307,9 @@ module unstructured_mesh_m
 
     end function
 
-    subroutine create_faces(face2cells, face2verts)
+    subroutine create_faces(half_faces, face2cells, face2verts)
         !! create face-to-cell and face-to-vertices connectivities.
+        type(half_face_t),intent(in) :: half_faces(:)
         integer,allocatable,intent(out) :: face2cells(:,:)
             !! face-to-cell connectivities. shape=(2,nface)
             !! 1 in 1st dim: owner cell, 2 in 2nd dim: neighbor cell, where face2cell(1,face) < face2cell(2,face)
@@ -419,13 +486,21 @@ module unstructured_mesh_m
 
     end subroutine
 
-
-    subroutine delete_half_faces()
-
-        if ( allocated(half_faces) ) then
-            deallocate(half_faces)
-        end if
-
+    subroutine delete_ugrid(this)
+        type(ugrid_struct_t),intent(inout) :: this
+    
+        if (allocated(this%verts))        deallocate(this%verts)
+        if (allocated(this%conns))        deallocate(this%conns)
+        if (allocated(this%offsets))      deallocate(this%offsets)
+        if (allocated(this%cell_types))   deallocate(this%cell_types)
+        if (allocated(this%cell_velocity))deallocate(this%cell_velocity)
+    
+        ! this%filename = FILENAME_NOT_ASSIGNED
+        if ( allocated(this%face2cells) ) deallocate(this%face2cells) 
+        if ( allocated(this%face2verts) ) deallocate(this%face2verts) 
+        if ( allocated(this%face_centers) ) deallocate(this%face_centers) 
+        if ( allocated(this%cell_centers) ) deallocate(this%cell_centers) 
     end subroutine
+    
 
 end module unstructured_mesh_m

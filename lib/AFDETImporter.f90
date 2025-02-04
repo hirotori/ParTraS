@@ -1,6 +1,7 @@
 module afdet_importer_m
     use kind_parameters_m
     use base_importer_m
+    use unstructured_mesh_m, only: ugrid_struct_t, VTK_HEXA, VTK_TETRA, VTK_PYRAMID, VTK_WEDGE
     implicit none
     
     type,extends(ugrid_importer_t) :: afdet_importer_t
@@ -16,8 +17,11 @@ module afdet_importer_m
         module procedure read_real_arr_r2
     end interface
 
-    type(cell_type_t),parameter :: CELL_TYPE_DEF_AFDET = cell_type_t(1, 3, 4, 2)
-        !! cell type definition for afdet solver
+    integer,parameter,private :: AFDET_TETRA = 1
+    integer,parameter,private :: AFDET_PYRAMID = 2
+    integer,parameter,private :: AFDET_WEDGE = 3
+    integer,parameter,private :: AFDET_HEXA = 4
+    
 
     public :: afdet_importer_t
 
@@ -82,6 +86,17 @@ subroutine read_backup_file(this, ugrid, shift_index)
     ! create offsets and connectivities
     ! cell2vertsから直にhal/faceを構築できればいいのだが, そうではないのでここで作成. 
     call create_conns_and_offsets_(ugrid%ncell, ugrid%cell2verts, ugrid%offsets, ugrid%conns)
+
+    ! セルタイプを変換する
+    where (ugrid%cell_types == AFDET_TETRA)
+        ugrid%cell_types = VTK_TETRA
+    elsewhere (ugrid%cell_types == AFDET_PYRAMID)
+        ugrid%cell_types = VTK_PYRAMID
+    elsewhere (ugrid%cell_types == AFDET_WEDGE)
+        ugrid%cell_types = VTK_WEDGE
+    elsewhere (ugrid%cell_types == AFDET_HEXA)
+        ugrid%cell_types = VTK_HEXA
+    end where
 
     ! ゴーストセルは除外する. 
     where (ugrid%face2cells > ugrid%ncell)
