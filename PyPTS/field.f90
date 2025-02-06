@@ -2,13 +2,21 @@ module init_m
     use iso_c_binding
     use util_m
     use kind_parameters_m
-    use base_importer_m
     use vtk_importer_m
     use afdet_importer_m
     use flow_field_m
     implicit none
     
 contains
+
+subroutine init_field(ugrid)
+    !! initialize a flow field and delete ugrid.
+    type(ugrid_struct_t),intent(inout) :: ugrid
+
+    call construct_flow_field(ugrid)
+    call delete_ugrid(ugrid)
+
+end subroutine
 
 subroutine init_field_vtk(c_filename, ascii) bind(c, name="init_field_vtk")
     character(c_char),dimension(*),intent(in) :: c_filename
@@ -32,9 +40,7 @@ subroutine init_field_vtk(c_filename, ascii) bind(c, name="init_field_vtk")
     call vtk_importer_%read_file(ugrid_, .true.)
     call vtk_importer_%close()
 
-    call construct_flow_field(ugrid_, CELL_TYPE_VTK, FACE_VERT_DEF_VTK)
-
-    call delete_ugrid(ugrid_)
+    call init_field(ugrid_)
 
 end subroutine
 
@@ -59,10 +65,9 @@ subroutine init_field_afdet(c_filename) bind(c, name="init_field_afdet")
     call importer_%open_file(filename)
     call importer_%read_file(ugrid_, .false.)
     call importer_%close()
-
-    call construct_flow_field(ugrid_, CELL_TYPE_DEF_AFDET, FACE_VERT_DEF_VTK)
-    call delete_ugrid(ugrid_)
     
+    call init_field(ugrid_)
+
 end subroutine
 
 end module

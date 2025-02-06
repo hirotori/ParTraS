@@ -29,7 +29,7 @@ subroutine update_field_vtk(dt_f, dt_p, basename, pad, field_only, verts_only, i
         call vtk_importer%open_ascii_off()
     end if
 
-    call mv_field_updater%construct_field_updater(vtk_importer, CELL_TYPE_VTK, FACE_VERT_DEF_VTK, &
+    call mv_field_updater%construct_field_updater(vtk_importer, &
     dt_f, dt_p, fstring(basename), pad, ".vtk", logical(field_only), logical(verts_only), interval)
 
 end subroutine
