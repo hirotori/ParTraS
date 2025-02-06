@@ -320,6 +320,7 @@ subroutine delete_mesh_field()
     if (allocated(mv_flow_field%cell_centers)) deallocate(mv_flow_field%cell_centers)
     if (allocated(mv_flow_field%boundary_faces)) deallocate(mv_flow_field%boundary_faces)
     if (allocated(mv_flow_field%velocity)) deallocate(mv_flow_field%velocity)
+    if (allocated(mv_flow_field%temperature)) deallocate(mv_flow_field%temperature)
     if (allocated(mv_flow_field%verts)) deallocate(mv_flow_field%verts)
 
     mv_flow_field%ncell = 0

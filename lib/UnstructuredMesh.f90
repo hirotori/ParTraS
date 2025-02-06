@@ -495,12 +495,15 @@ module unstructured_mesh_m
         if (allocated(this%conns))        deallocate(this%conns)
         if (allocated(this%offsets))      deallocate(this%offsets)
         if (allocated(this%cell_types))   deallocate(this%cell_types)
+        if (allocated(this%cell2verts))   deallocate(this%cell2verts)
         if (allocated(this%cell_velocity))deallocate(this%cell_velocity)
-    
+        if (allocated(this%cell_temperature)) deallocate(this%cell_temperature)
+        
         ! this%filename = FILENAME_NOT_ASSIGNED
         if ( allocated(this%face2cells) ) deallocate(this%face2cells) 
         if ( allocated(this%face2verts) ) deallocate(this%face2verts) 
         if ( allocated(this%face_centers) ) deallocate(this%face_centers) 
+        if ( allocated(this%face_normals) ) deallocate(this%face_normals) 
         if ( allocated(this%cell_centers) ) deallocate(this%cell_centers) 
     end subroutine
     

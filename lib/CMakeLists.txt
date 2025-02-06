@@ -13,6 +13,7 @@ add_library(partras STATIC
     ParticleData.f90
     Simulator.f90
     UnstructuredMesh.f90
+    ValidationMethods.f90
     VTKImporter.f90
     Version.f90
 )
