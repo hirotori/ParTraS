@@ -1,6 +1,5 @@
 program test_afdet_impoter
-    use base_importer_m, only: ugrid_struct_t
-    use vtk_importer_m, only: FACE_VERT_DEF_VTK
+    use unstructured_mesh_m
     use afdet_importer_m
     use flow_field_m
     implicit none
@@ -19,6 +18,6 @@ program test_afdet_impoter
     end if
 
     !読み込めるかのテスト
-    call construct_flow_field(grid, CELL_TYPE_DEF_AFDET, FACE_VERT_DEF_VTK)
+    call construct_flow_field(grid)
 
 end program 

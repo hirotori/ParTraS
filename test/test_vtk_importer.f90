@@ -1,5 +1,5 @@
 program test
-    use base_importer_m, only: ugrid_struct_t, delete_ugrid
+    use unstructured_mesh_m
     use vtk_importer_m
     implicit none
     type(vtk_importer_t) vtk_importer

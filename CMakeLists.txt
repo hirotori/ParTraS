@@ -18,7 +18,7 @@ set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/mod)
 add_subdirectory(lib)
 
 # for Python interface
-add_subdirectory(PyPTS)
+# add_subdirectory(PyPTS)
 
 # test
 enable_testing()

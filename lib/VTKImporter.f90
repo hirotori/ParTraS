@@ -1,54 +1,17 @@
 module vtk_importer_m
     use kind_parameters_m
+    use unstructured_mesh_m
     use base_importer_m
     use id_list_m
     implicit none
-    private
-    integer,parameter,private :: VTK_TETRA = 10
-    integer,parameter,private :: VTK_WEDGE = 13
-    integer,parameter,private :: VTK_HEXA  = 12
-    integer,parameter,private :: VTK_PYRAMID = 14
-
-    integer,parameter :: face_def_tetra(4,4) = reshape([[3, 1,3,2], &
-                                                        [3, 1,2,4], &
-                                                        [3, 2,3,4], &
-                                                        [3, 3,1,4]], shape=shape(face_def_tetra))
-
-    integer,parameter :: face_def_wedge(5,5) = reshape([[3, 1,3,2,-1], &
-                                                        [3, 4,5,6,-1], &
-                                                        [4, 1,2,5,4], &
-                                                        [4, 2,3,6,5], &
-                                                        [4, 1,4,6,3]], shape=shape(face_def_wedge))
-
-    integer,parameter :: face_def_hexa(5,6) = reshape([[4, 2,1,4,3], &
-                                                       [4, 1,5,8,4], &
-                                                       [4, 5,6,7,8], &
-                                                       [4, 2,3,7,6], &
-                                                       [4, 2,6,5,1], &
-                                                       [4, 3,4,8,7]], shape=shape(face_def_hexa))
-
-    integer,parameter :: face_def_pyram(5,5) = reshape([[3, 5,1,2,-1], &
-                                                        [3, 5,2,3,-1], &
-                                                        [3, 5,3,4,-1], &
-                                                        [3, 5,4,1,-1], &
-                                                        [4, 1,4,3,2]], shape=shape(face_def_pyram)) 
-
-    type(cell_type_t),parameter :: CELL_TYPE_VTK = cell_type_t(VTK_TETRA, VTK_WEDGE, VTK_HEXA, VTK_PYRAMID)
-        !! cell type definition for VTK (module variable)
-    type(face_vertex_def_t),parameter :: FACE_VERT_DEF_VTK = face_vertex_def_t(face_def_tetra, &
-                                                                               face_def_wedge, &
-                                                                               face_def_hexa, &
-                                                                               face_def_pyram)
-        !! face-vertex connectivity definition for VTK (module variable)
-    
+    private    
     type,extends(ugrid_importer_t) :: vtk_importer_t
 
         contains
         procedure :: read_file => import_vtk_ugrid_legacy
     end type
 
-    public vtk_importer_t, &
-           CELL_TYPE_VTK, FACE_VERT_DEF_VTK
+    public vtk_importer_t
 
 contains
 

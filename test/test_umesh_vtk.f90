@@ -1,5 +1,4 @@
 program test
-    use base_importer_m, only: ugrid_struct_t
     use vtk_importer_m
     use unstructured_mesh_m
     implicit none
@@ -8,6 +7,7 @@ program test
     integer,allocatable :: cell_faces(:), cell_offsets(:)
     type(vtk_importer_t) vtk_importer
     type(ugrid_struct_t) vtk_ugrid
+    type(half_face_t),allocatable :: half_faces(:)
 
     call vtk_importer%open_ascii_on()
     call vtk_importer%open_stream_on()
@@ -15,8 +15,7 @@ program test
     call vtk_importer%read_file(vtk_ugrid, shift_index=.true.)
     call vtk_importer%close()
     
-    call construct_half_faces(vtk_ugrid%ncell, vtk_ugrid%nvert, vtk_ugrid%conns, vtk_ugrid%offsets, vtk_ugrid%cell_types, &
-                              CELL_TYPE_VTK, FACE_VERT_DEF_VTK)
+    call construct_half_faces(vtk_ugrid, half_faces)
     print*, ""
     do i = 1, size(half_faces)
         print "('face = ', i0)", i
@@ -24,7 +23,7 @@ program test
         print "('verts = ', *(i0,:,',',1x), ']')", half_faces(i)%vertices(1:half_faces(i)%vert_count)
     end do
 
-    call create_faces(face2cells,face2verts)
+    call create_faces(half_faces, face2cells,face2verts)
 
     do i = 1, size(face2cells,dim=2)
         print*, face2cells(:,i)

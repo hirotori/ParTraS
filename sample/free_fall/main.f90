@@ -1,5 +1,5 @@
 program main
-    use base_importer_m, only: ugrid_struct_t, delete_ugrid
+    use unstructured_mesh_m
     use vtk_importer_m
     use flow_field_m
     use particle_data_m
@@ -32,7 +32,7 @@ program main
     call vtk_importer%open_ascii_on()
     call vtk_importer%open_file("quiescent.vtk")
     call vtk_importer%read_file(vtk_ugrid, shift_index=.true.)
-    call construct_flow_field(vtk_ugrid, CELL_TYPE_VTK, FACE_VERT_DEF_VTK)
+    call construct_flow_field(vtk_ugrid)
     call delete_ugrid(vtk_ugrid)
 
     call construct_particle_data(200)
