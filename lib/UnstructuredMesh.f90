@@ -23,7 +23,9 @@ module unstructured_mesh_m
         integer(IP),allocatable :: offsets(:)
         integer(IP),allocatable :: cell2verts(:,:)
         integer(IP),allocatable :: cell_types(:)
+
         real(DP),allocatable :: cell_velocity(:,:)
+        real(DP),allocatable :: cell_temperature(:)
 
         ! CFDデータのサポート. 
         ! 特定のCFDデータは面ーセル接続関係をファイルに書き込む場合がある. 
